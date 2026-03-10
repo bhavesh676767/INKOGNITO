@@ -1,0 +1,148 @@
+:root {
+  --ink-bg: #232323;
+  --ink-chalk: #ffffff;
+  --ink-blood: #8b0000;
+  --ink-blood-bright: #a30000;
+
+  --ink-font-heading: 'Caveat', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --ink-font-label: 'Patrick Hand', system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ink-font-secondary: 'Gloria Hallelujah', system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --ink-chalk-thickness: 1.5px;
+  --ink-chalk-radius: 12px;
+  --ink-chalk-shadow-soft: 0 0 18px rgba(255, 255, 255, 0.04);
+  --ink-blood-glow: 0 0 22px rgba(163, 0, 0, 0.5);
+}
+
+.ink-app-root {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--ink-bg);
+  color: var(--ink-chalk);
+  font-family: var(--ink-font-label);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.ink-layer {
+  position: relative;
+  z-index: 1;
+}
+
+.ink-chalk-surface {
+  position: relative;
+  border-radius: var(--ink-chalk-radius);
+  border: var(--ink-chalk-thickness) solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--ink-chalk-shadow-soft);
+  background: radial-gradient(
+      circle at top left,
+      rgba(255, 255, 255, 0.04),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(0, 0, 0, 0.8),
+      rgba(0, 0, 0, 0.95)
+    );
+  overflow: hidden;
+}
+
+.ink-chalk-surface::before {
+  content: '';
+  position: absolute;
+  inset: -10%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='noStitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+  mix-blend-mode: screen;
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.ink-chalk-surface::after {
+  content: '';
+  position: absolute;
+  inset: -5%;
+  background: repeating-linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.25;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.ink-chalk-outline {
+  border-radius: var(--ink-chalk-radius);
+  border: 1.5px dashed rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.18);
+}
+
+.ink-jitter-soft {
+  will-change: transform;
+}
+
+.ink-blood-accent {
+  color: var(--ink-blood-bright);
+  text-shadow: var(--ink-blood-glow);
+}
+
+.ink-blood-underline {
+  position: relative;
+}
+
+.ink-blood-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.1em;
+  height: 0.16em;
+  background: linear-gradient(
+    90deg,
+    rgba(139, 0, 0, 0.92),
+    rgba(163, 0, 0, 0.98),
+    rgba(139, 0, 0, 0.92)
+  );
+  filter: blur(0.4px);
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(163, 0, 0, 0.6);
+  transform-origin: left;
+}
+
+.ink-chalk-heading {
+  font-family: var(--ink-font-heading);
+  letter-spacing: 0.03em;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.ink-chalk-label {
+  font-family: var(--ink-font-label);
+}
+
+.ink-chalk-secondary {
+  font-family: var(--ink-font-secondary);
+}
+
+.ink-chalk-noise-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: -10px;
+  mix-blend-mode: soft-light;
+  opacity: 0.12;
+  z-index: 0;
+}
+
+.ink-chalk-noise-overlay canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
