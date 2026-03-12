@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>INKOGNITO - Lobby</title>
+    <link rel="stylesheet" href="pregame-lobby.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Black+Han+Sans&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- PRELOADER -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-ghost">
+            <img src="/assets/characters/base_character.png" alt="Loading…" class="preloader-ghost-img">
+        </div>
+        <p class="preloader-text">Loading Lobby…</p>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="lobby-container" id="lobbyContainer" style="display:none;">
+
+        <!-- BACKGROUND NOISE / STARS -->
+        <canvas id="starfield" class="starfield-bg"></canvas>
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="logo-area">
+                <img src="/assets/logo/frame1.png" alt="INKOGNITO" class="logo">
+                <img src="/assets/UI Chalk/UI_Lock_icon.png" alt="Lock" class="lock-icon">
+            </div>
+            <div class="top-right-actions">
+                <button id="leaveLobbyBtn" class="chalk-btn leave-party-btn" style="padding: 5px 15px; font-size: 14px; border-color: #ff3b30; color: #ff3b30; margin-right: 15px;">Leave Lobby</button>
+                <button class="icon-btn" id="voiceMuteBtn" aria-label="Mute Voice">
+                    <img src="/assets/UI Chalk/UI_Button_Chalk-1.png" alt="Mute">
+                </button>
+            </div>
+        </header>
+
+        <main class="lobby-main">
+            <!-- LEFT PANEL: PLAYERS -->
+            <section class="panel left-panel">
+                <div class="players-list-scroll">
+                    <div id="playersList" class="players-list">
+                        <!-- Player cards will be injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- CENTER PANEL: SETTINGS -->
+            <section class="panel center-panel">
+                <div class="settings-grid">
+                    <!-- Column 1 -->
+                    <div class="settings-col">
+                        <div class="setting-row">
+                            <img src="/assets/UI Chalk/player_icon.png" alt="Icon" class="setting-icon">
+                            <label>Max Players</label>
+                            <select id="maxPlayers" class="white-select" disabled>
+                                <option value="2">2</option>
+                                <option value="4">4</option>
+                                <option value="6" selected>6</option>
+                                <option value="8">8</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <img src="/assets/UI Chalk/clock.png" alt="Icon" class="setting-icon">
+                            <label>Turn Duration</label>
+                            <select id="turnDuration" class="white-select" disabled>
+                                <option value="5">5 Secs</option>
+                                <option value="10">10 Secs</option>
+                                <option value="15">15 Secs</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <img src="/assets/UI Chalk/brush_icon.png" alt="Icon" class="setting-icon">
+                            <label>Brush Size</label>
+                            <input type="range" id="brushSize" min="1" max="10" value="3" disabled>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <img src="/assets/UI Chalk/slow_mo.png" alt="Icon" class="setting-icon">
+                            <label>Slow Motion Replay</label>
+                            <label class="switch">
+                                <input type="checkbox" id="slowMoReplay" disabled>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <label>Number of Imposters</label>
+                            <select id="numberOfImposters" class="white-select" disabled>
+                                <option value="1" selected>1</option>
+                                <option value="2">2</option>
+                            </select>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label>Allow Voice Chating</label>
+                            <label class="switch">
+                                <input type="checkbox" id="allowVoiceChat" disabled>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Column 2 -->
+                    <div class="settings-col">
+                        <div class="setting-row">
+                            <label>Language</label>
+                            <select id="language" class="white-select" disabled>
+                                <option value="EN" selected>EN</option>
+                                <option value="ES">ES</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <img src="/assets/UI Chalk/ink_bottle.png" alt="Icon" class="setting-icon">
+                            <label>Ink Limit</label>
+                            <input type="range" id="inkLimit" min="10" max="100" value="50" disabled>
+                        </div>
+                        <div class="setting-row">
+                            <img src="/assets/UI Chalk/vote_button.png" alt="Icon" class="setting-icon">
+                            <label>Vote Time <span class="muted-text">in secs</span></label>
+                            <select id="voteTime" class="white-select" disabled>
+                                <option value="30">30 Secs</option>
+                                <option value="60">60 Secs</option>
+                            </select>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label>Anonymous Vote</label>
+                            <label class="switch">
+                                <input type="checkbox" id="anonymousVote" disabled>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Words Section -->
+                <div class="custom-words-box">
+                    <div class="custom-words-header">
+                        <label>Type it, then press Enter to add the word.</label>
+                        <div class="toggle-row">
+                            <label>Custom words</label>
+                            <label class="switch">
+                                <input type="checkbox" id="customWordsEnabled" disabled>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <input type="text" id="customWordInput" placeholder="Add custom word..." autocomplete="off">
+                    <div id="customWordsList" class="custom-words-list">
+                        <!-- Word chips will be injected here -->
+                    </div>
+                </div>
+
+                <!-- SELECT MODE -->
+                <div class="modes-section">
+                    <h2 class="panel-title">SELECT MODE</h2>
+                    <div class="modes-grid">
+                        <div class="mode-card active" data-mode="Final Verdict" id="modeFinalVerdict">
+                            <span>Final Verdict</span>
+                            <img src="/assets/UI Chalk/vote_button.png" alt="Hammer">
+                        </div>
+                        <div class="mode-card" data-mode="Investigation" id="modeInvestigation">
+                            <span>Investigation</span>
+                            <img src="/assets/UI Chalk/fill_bucket.png" alt="Magnifying Glass">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="actions-row">
+                    <button class="chalk-btn start-btn" id="startGameBtn" disabled>START GAME</button>
+                    <button class="chalk-btn invite-btn" id="inviteBtn">INVITE</button>
+                    <!-- hidden text for copy -->
+                    <input type="text" id="copyUrlInput" style="position:absolute; left:-9999px;">
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: CHAT -->
+            <section class="panel right-panel">
+                <div class="chat-header">chat</div>
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages go here -->
+                </div>
+                <div class="chat-input-area">
+                    <form id="chatForm">
+                        <input type="text" id="chatInput" placeholder="type to chat" autocomplete="off">
+                        <button type="submit" class="send-btn" aria-label="Send">
+                            <img src="/assets/UI Chalk/Chalk_Arrow_Projectiles-1.png" alt="send" style="transform: rotate(90deg);">
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Toast / Alerts -->
+        <div id="lobbyToast" class="toast"></div>
+
+    <!-- Sockets Client -->
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="pregame-lobby.js"></script>
+</body>
+</html>

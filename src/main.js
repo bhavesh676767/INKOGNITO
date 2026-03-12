@@ -1,11 +1,9 @@
 import { render } from 'preact';
-import { HomeScene } from './scenes/homeScene.js';
-import './styles/global.css';
-import './styles/chalkTheme.css';
+import { HomePage } from './homePageBundle.jsx';
 
 const root = document.getElementById('root');
 
 if (root) {
-  render(<HomeScene />, root);
+  render(<HomePage />, root);
 }
 

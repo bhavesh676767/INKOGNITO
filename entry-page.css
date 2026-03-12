@@ -1,0 +1,975 @@
+/* ============================================================
+   INKOGNITO — Entry Page  (FINAL)
+   Stars bg · bold game UI · no glow · instant swaps
+   Fits 100vh on ALL screens — phone, tablet, desktop
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Black+Han+Sans&display=swap');
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ── Variables ── */
+:root {
+    --font-chalk: 'Gloria Hallelujah', cursive;
+    --font-bold: 'Black Han Sans', sans-serif;
+    --white: #ffffff;
+    --dim: rgba(255, 255, 255, 0.28);
+    --border: rgba(255, 255, 255, 0.75);
+    --card-bg: #090909;
+    --card-border: rgba(255, 255, 255, 0.28);
+}
+
+/* ============================================================
+   BACKGROUND — deep space + stars
+   ============================================================ */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    /* NO scroll ever */
+}
+
+body {
+    font-family: var(--font-chalk);
+    background: #0d0d12;
+    color: var(--white);
+    position: relative;
+}
+
+/* depth 1 — tiny distant stars */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        radial-gradient(1px 1px at 7% 12%, rgba(255, 255, 255, .85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 14% 34%, rgba(255, 255, 255, .70) 0%, transparent 100%),
+        radial-gradient(1px 1px at 21% 8%, rgba(255, 255, 255, .60) 0%, transparent 100%),
+        radial-gradient(1px 1px at 28% 55%, rgba(255, 255, 255, .80) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 22%, rgba(255, 255, 255, .65) 0%, transparent 100%),
+        radial-gradient(1px 1px at 41% 78%, rgba(255, 255, 255, .75) 0%, transparent 100%),
+        radial-gradient(1px 1px at 48% 44%, rgba(255, 255, 255, .55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 54% 91%, rgba(255, 255, 255, .80) 0%, transparent 100%),
+        radial-gradient(1px 1px at 61% 17%, rgba(255, 255, 255, .70) 0%, transparent 100%),
+        radial-gradient(1px 1px at 67% 63%, rgba(255, 255, 255, .60) 0%, transparent 100%),
+        radial-gradient(1px 1px at 73% 38%, rgba(255, 255, 255, .85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 79% 5%, rgba(255, 255, 255, .65) 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 82%, rgba(255, 255, 255, .75) 0%, transparent 100%),
+        radial-gradient(1px 1px at 91% 29%, rgba(255, 255, 255, .55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 96% 71%, rgba(255, 255, 255, .80) 0%, transparent 100%),
+        radial-gradient(1px 1px at 3% 67%, rgba(255, 255, 255, .70) 0%, transparent 100%),
+        radial-gradient(1px 1px at 10% 88%, rgba(255, 255, 255, .60) 0%, transparent 100%),
+        radial-gradient(1px 1px at 17% 47%, rgba(255, 255, 255, .85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 24% 73%, rgba(255, 255, 255, .65) 0%, transparent 100%),
+        radial-gradient(1px 1px at 31% 3%, rgba(255, 255, 255, .75) 0%, transparent 100%),
+        radial-gradient(1px 1px at 38% 92%, rgba(255, 255, 255, .55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 26%, rgba(255, 255, 255, .80) 0%, transparent 100%),
+        radial-gradient(1px 1px at 52% 58%, rgba(255, 255, 255, .70) 0%, transparent 100%),
+        radial-gradient(1px 1px at 59% 84%, rgba(255, 255, 255, .60) 0%, transparent 100%),
+        radial-gradient(1px 1px at 65% 11%, rgba(255, 255, 255, .85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 71% 49%, rgba(255, 255, 255, .65) 0%, transparent 100%),
+        radial-gradient(1px 1px at 77% 76%, rgba(255, 255, 255, .75) 0%, transparent 100%),
+        radial-gradient(1px 1px at 83% 23%, rgba(255, 255, 255, .55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 89% 95%, rgba(255, 255, 255, .80) 0%, transparent 100%),
+        radial-gradient(1px 1px at 94% 41%, rgba(255, 255, 255, .70) 0%, transparent 100%);
+    background-size: 100% 100%;
+}
+
+/* depth 2 — medium stars + vignette */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        radial-gradient(1.5px 1.5px at 5% 20%, rgba(255, 255, 255, .90) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 19% 65%, rgba(255, 255, 255, .85) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 33% 40%, rgba(255, 255, 255, .78) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 47% 85%, rgba(255, 255, 255, .90) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 58% 10%, rgba(255, 255, 255, .82) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 69% 55%, rgba(255, 255, 255, .88) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 81% 30%, rgba(255, 255, 255, .75) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 92% 72%, rgba(255, 255, 255, .90) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 12% 90%, rgba(255, 255, 255, .80) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 76% 48%, rgba(255, 255, 255, .85) 0%, transparent 100%),
+        radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0, 0, 0, .82) 100%);
+    background-size: 100% 100%;
+}
+
+/* depth 3 — large bright stars */
+.chalk-noise {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        radial-gradient(2px 2px at 8% 35%, rgba(255, 255, 255, .95) 0%, transparent 100%),
+        radial-gradient(2px 2px at 26% 72%, rgba(255, 255, 255, 1.0) 0%, transparent 100%),
+        radial-gradient(2px 2px at 44% 18%, rgba(255, 255, 255, .92) 0%, transparent 100%),
+        radial-gradient(2px 2px at 62% 60%, rgba(255, 255, 255, 1.0) 0%, transparent 100%),
+        radial-gradient(2px 2px at 80% 88%, rgba(255, 255, 255, .95) 0%, transparent 100%),
+        radial-gradient(2px 2px at 90% 14%, rgba(255, 255, 255, .88) 0%, transparent 100%),
+        radial-gradient(2px 2px at 16% 52%, rgba(255, 255, 255, 1.0) 0%, transparent 100%),
+        radial-gradient(2px 2px at 72% 28%, rgba(255, 255, 255, .92) 0%, transparent 100%);
+    background-size: 100% 100%;
+}
+
+/* ============================================================
+   PRELOADER
+   ============================================================ */
+.preloader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0d0d12;
+    gap: 20px;
+}
+
+.preloader-ghost {
+    width: 80px;
+    height: 100px;
+    animation: floatY 1.5s ease-in-out infinite;
+}
+
+.preloader-ghost-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.preloader-text {
+    font-family: var(--font-chalk);
+    font-size: clamp(14px, 2vw, 18px);
+    color: rgba(255, 255, 255, .7);
+    letter-spacing: 3px;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+.preloader.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s;
+}
+
+/* ============================================================
+   GAME CONTAINER — strict 100vh column, NO overflow
+   ============================================================ */
+.game-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    /* clamp padding so nothing clips on any screen */
+    padding: clamp(8px, 1.5vh, 16px) clamp(12px, 2.5vw, 30px) clamp(8px, 1.5vh, 16px);
+    overflow: hidden;
+}
+
+/* ============================================================
+   TOP BAR
+   uses clamp so logo never clips on short screens
+   ============================================================ */
+.top-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 10;
+    /* fluid height — shorter on phones/short viewports */
+    height: clamp(64px, 13vh, 112px);
+}
+
+.top-left-icons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: clamp(34px, 4vw, 46px);
+    height: clamp(34px, 4vw, 46px);
+    padding: 0;
+    transition: transform .18s;
+}
+
+.icon-btn:hover {
+    transform: scale(1.13);
+}
+
+.icon-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Logo — centered in bar, scales with bar height */
+.logo-wrapper {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.logo {
+    /* fluid width: never bigger than 520px, never tiny */
+    width: clamp(180px, 38vw, 520px);
+    height: auto;
+    filter: drop-shadow(4px 6px 0 #000) drop-shadow(0 2px 0 #000);
+    animation: logoDrop .7s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+.logo:hover {
+    transform: scale(1.02);
+    transition: transform .3s;
+}
+
+/* ── Language dropdown ── */
+.top-right {
+    position: relative;
+    z-index: 100;
+}
+
+.lang-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.lang-btn {
+    background: transparent;
+    border: 3px solid var(--white);
+    color: var(--white);
+    font-family: var(--font-chalk);
+    font-size: clamp(11px, 1.2vw, 14px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: clamp(5px, .8vh, 8px) clamp(10px, 1.2vw, 16px);
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .18s;
+    white-space: nowrap;
+}
+
+.lang-btn::after {
+    content: '▾';
+    font-size: 11px;
+    opacity: .8;
+}
+
+.lang-btn:hover {
+    background: rgba(255, 255, 255, .08);
+}
+
+.lang-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    background: #111;
+    border: 2.5px solid var(--white);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 150px;
+    z-index: 200;
+}
+
+.lang-menu.open {
+    display: block;
+}
+
+.lang-option {
+    display: block;
+    width: 100%;
+    padding: 9px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid rgba(255, 255, 255, .12);
+    color: var(--white);
+    font-family: var(--font-chalk);
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    text-align: left;
+    transition: background .14s;
+}
+
+.lang-option:last-child {
+    border-bottom: none;
+}
+
+.lang-option:hover {
+    background: rgba(255, 255, 255, .10);
+}
+
+.lang-option.active {
+    background: rgba(255, 255, 255, .16);
+}
+
+/* ============================================================
+   CENTERING WRAPPER — takes all remaining height
+   ============================================================ */
+.main-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* ============================================================
+   INVITE NOTIFICATION
+   ============================================================ */
+.invite-notification {
+    background: rgba(0, 0, 0, 0.8);
+    border: 3px solid var(--white);
+    border-radius: 4px;
+    padding: 15px 30px;
+    text-align: center;
+    animation: dropIn 0.4s ease-out both;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    max-width: 880px;
+    width: 100%;
+}
+
+.invite-notification p {
+    font-size: clamp(14px, 1.8vw, 18px);
+}
+
+.invite-subtext {
+    font-size: clamp(12px, 1.5vw, 14px);
+    color: var(--dim);
+}
+
+.leave-party-btn {
+    font-size: 14px;
+    padding: 5px 15px;
+    background: transparent;
+    border-color: #ff3b30;
+    color: #ff3b30;
+}
+
+.leave-party-btn:hover {
+    background: #ff3b30;
+    color: white;
+}
+
+@keyframes dropIn {
+    0% { transform: translateY(-20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ============================================================
+   THE CARD — fluid sizing, never overflows
+   ============================================================ */
+.game-card {
+    display: flex;
+    align-items: stretch;
+    background: var(--card-bg);
+    border: 3px solid var(--card-border);
+    border-radius: 4px;
+    /* never wider than viewport, never taller than remaining space */
+    width: 100%;
+    max-width: 880px;
+    max-height: 100%;
+    overflow: visible;
+    /* arrows poke out */
+}
+
+/* ============================================================
+   CHARACTER PANEL
+   ============================================================ */
+.character-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(4px, .8vh, 10px);
+    padding: clamp(12px, 2vh, 22px) clamp(18px, 2.5vw, 30px);
+    flex-shrink: 0;
+    position: relative;
+    border-right: 3px solid rgba(255, 255, 255, .18);
+}
+
+.character-display {
+    position: relative;
+    /* fluid size — shrinks on short/narrow screens */
+    width: clamp(100px, 14vw, 160px);
+    height: clamp(115px, 16vw, 184px);
+}
+
+.avatar {
+    position: absolute;
+    inset: 0;
+    animation: ghostIdle 3s ease-in-out infinite;
+}
+
+.char-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: none;
+    /* INSTANT — no fade */
+}
+
+.base-layer {
+    z-index: 1;
+}
+
+.hat-layer {
+    z-index: 3;
+}
+
+.expr-layer {
+    z-index: 2;
+}
+
+/* Arrow buttons — bold square */
+.arrow-btn {
+    position: absolute;
+    z-index: 10;
+    background: #111;
+    border: 3px solid var(--white);
+    border-radius: 4px;
+    cursor: pointer;
+    width: clamp(28px, 3vw, 38px);
+    height: clamp(28px, 3vw, 38px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    transition: background .14s, transform .14s;
+}
+
+.arrow-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: brightness(5) contrast(1.6);
+}
+
+.arrow-btn:hover {
+    background: #2a2a2a;
+    transform: scale(1.1);
+}
+
+.arrow-btn:active {
+    transform: scale(.94);
+}
+
+/* positions — offset by arrow width + 2px gap */
+.arrow-hat-prev {
+    left: calc(-1 * clamp(28px, 3vw, 38px) - 12px);
+    top: 28%;
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.arrow-hat-prev:hover {
+    transform: translateY(-50%) rotate(180deg) scale(1.1);
+}
+
+.arrow-hat-next {
+    right: calc(-1 * clamp(28px, 3vw, 38px) - 12px);
+    top: 28%;
+    transform: translateY(-50%);
+}
+
+.arrow-hat-next:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+.arrow-expr-prev {
+    left: calc(-1 * clamp(28px, 3vw, 38px) - 12px);
+    top: 66%;
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.arrow-expr-prev:hover {
+    transform: translateY(-50%) rotate(180deg) scale(1.1);
+}
+
+.arrow-expr-next {
+    right: calc(-1 * clamp(28px, 3vw, 38px) - 12px);
+    top: 66%;
+    transform: translateY(-50%);
+}
+
+.arrow-expr-next:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+.random-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: clamp(32px, 3.5vw, 44px);
+    height: clamp(32px, 3.5vw, 44px);
+    padding: 0;
+    transition: transform .22s;
+}
+
+.random-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.random-btn:hover {
+    transform: scale(1.16) rotate(20deg);
+}
+
+/* ============================================================
+   ACTIONS PANEL
+   ============================================================ */
+.actions-panel {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(7px, 1.2vh, 12px);
+    padding: clamp(12px, 2vh, 20px) clamp(14px, 2vw, 26px);
+}
+
+.panel-heading {
+    font-family: var(--font-chalk);
+    font-size: clamp(9px, 1.1vw, 13px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 2px;
+}
+
+.name-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.input-wrapper {
+    flex: 1;
+}
+
+.name-input {
+    width: 100%;
+    height: 100%;
+    padding: clamp(8px, 1vh, 12px) clamp(10px, 1.2vw, 15px);
+    background: #111;
+    border: 3px solid var(--border);
+    border-radius: 3px;
+    outline: none;
+    color: var(--white);
+    font-family: var(--font-chalk);
+    font-size: clamp(10px, 1.1vw, 13px);
+    letter-spacing: 1.5px;
+    transition: border-color .18s, background .18s;
+}
+
+.name-input::placeholder {
+    color: var(--dim);
+}
+
+.name-input:focus {
+    background: #161616;
+    border-color: #fff;
+}
+
+/* ── Buttons ── */
+.chalk-btn {
+    background: transparent;
+    border: 3px solid var(--white);
+    color: var(--white);
+    font-family: var(--font-chalk);
+    font-size: clamp(10px, 1.1vw, 14px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: clamp(8px, 1vh, 12px) clamp(10px, 1.4vw, 18px);
+    border-radius: 3px;
+    white-space: nowrap;
+    transition: background .14s, transform .14s;
+}
+
+.chalk-btn:hover {
+    background: rgba(255, 255, 255, .1);
+    transform: scale(1.04);
+}
+
+.chalk-btn:active {
+    transform: scale(.96);
+}
+
+.submit-btn {
+    flex-shrink: 0;
+}
+
+.start-btn {
+    width: 100%;
+    padding: clamp(10px, 1.4vh, 14px);
+    font-size: clamp(14px, 2vw, 20px);
+    letter-spacing: clamp(3px, .5vw, 5px);
+    background: #e0e0e0;
+    color: #0a0a0a;
+    border-color: #e0e0e0;
+}
+
+.start-btn:hover {
+    background: #fff;
+    border-color: #fff;
+    transform: scale(1.02);
+}
+
+.party-row {
+    display: flex;
+    gap: 8px;
+}
+
+.party-btn {
+    flex: 2;
+    text-align: center;
+}
+
+.join-btn {
+    flex: 1;
+    text-align: center;
+}
+
+/* ── Toast ── */
+.toast-msg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(.9);
+    background: rgba(0, 0, 0, .94);
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 4px;
+    border: 3px solid rgba(255, 255, 255, .7);
+    font-family: var(--font-chalk);
+    font-size: 17px;
+    z-index: 9000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .25s, transform .25s;
+}
+
+.toast-msg.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* mobile bottom bar — desktop hidden */
+.mobile-bottom-bar {
+    display: none;
+}
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+@keyframes logoDrop {
+    0% {
+        opacity: 0;
+        transform: translateY(-40px) scale(.88);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes ghostIdle {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    25% {
+        transform: translateY(-5px) rotate(.6deg);
+    }
+
+    50% {
+        transform: translateY(-3px) rotate(-.4deg);
+    }
+
+    75% {
+        transform: translateY(-7px) rotate(.5deg);
+    }
+}
+
+@keyframes floatY {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: .4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* ============================================================
+   TABLET  481px – 900px
+   Two-column card, scaled down to fit 100vh
+   ============================================================ */
+@media (max-width: 900px) {
+    .logo {
+        width: clamp(160px, 36vw, 400px);
+    }
+
+    .game-card {
+        max-width: 680px;
+    }
+}
+
+/* short landscape screens (e.g. phone rotated) */
+@media (max-height: 500px) {
+    .top-bar {
+        height: clamp(44px, 10vh, 64px);
+    }
+
+    .logo {
+        width: clamp(130px, 28vw, 280px);
+    }
+
+    .character-display {
+        width: clamp(70px, 10vw, 110px);
+        height: clamp(80px, 11vw, 126px);
+    }
+
+    .actions-panel {
+        gap: 5px;
+    }
+
+    .panel-heading {
+        font-size: 9px;
+    }
+
+    .start-btn {
+        font-size: 13px;
+        padding: 7px;
+    }
+
+    .chalk-btn {
+        font-size: 10px;
+        padding: 7px 10px;
+    }
+
+    .name-input {
+        padding: 7px 10px;
+        font-size: 10px;
+    }
+}
+
+/* ============================================================
+   MOBILE  ≤ 480px  — vertical single-column, still 100vh
+   ============================================================ */
+@media (max-width: 480px) {
+
+    /* body stays overflow:hidden — container is the viewport */
+    .game-container {
+        padding: clamp(6px, 1.5vw, 14px) clamp(8px, 3vw, 16px);
+        justify-content: space-between;
+        /* spread: topbar · card · bottombar */
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* top bar: only logo, centered */
+    .top-bar {
+        height: clamp(48px, 11vh, 72px);
+        justify-content: center;
+    }
+
+    .top-left-icons,
+    .top-right {
+        display: none;
+    }
+
+    .logo-wrapper {
+        position: static;
+        transform: none;
+        display: flex;
+        justify-content: center;
+    }
+
+    .logo {
+        width: clamp(140px, 52vw, 220px);
+    }
+
+    /* centering wrapper: flex:1 so card gets remaining space */
+    .main-content {
+        flex: 1;
+        min-height: 0;
+        align-items: center;
+    }
+
+    /* card goes vertical, fills available width */
+    .game-card {
+        flex-direction: column;
+        max-width: 360px;
+        width: 100%;
+        max-height: 100%;
+    }
+
+    /* character panel on top */
+    .character-panel {
+        border-right: none;
+        border-bottom: 3px solid rgba(255, 255, 255, .18);
+        padding: clamp(10px, 2vh, 18px) clamp(40px, 12vw, 60px);
+        flex-shrink: 0;
+    }
+
+    .character-display {
+        width: clamp(90px, 26vw, 140px);
+        height: clamp(104px, 30vw, 160px);
+    }
+
+    /* on mobile: one centred arrow pair flanking ghost */
+    .arrow-hat-prev {
+        left: clamp(-48px, -13vw, -34px);
+        top: 50%;
+        transform: translateY(-50%) rotate(180deg);
+    }
+
+    .arrow-hat-prev:hover {
+        transform: translateY(-50%) rotate(180deg) scale(1.1);
+    }
+
+    .arrow-hat-next {
+        right: clamp(-48px, -13vw, -34px);
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .arrow-hat-next:hover {
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .arrow-expr-prev,
+    .arrow-expr-next {
+        display: none;
+    }
+
+    /* actions panel below */
+    .actions-panel {
+        padding: clamp(10px, 1.5vh, 16px) clamp(10px, 3vw, 18px);
+        gap: clamp(6px, 1.2vh, 10px);
+        flex: 1;
+        min-height: 0;
+        justify-content: center;
+    }
+
+    .panel-heading {
+        font-size: clamp(8px, 2.2vw, 11px);
+        text-align: center;
+    }
+
+    .start-btn {
+        font-size: clamp(12px, 3.5vw, 16px);
+        letter-spacing: 3px;
+        padding: clamp(9px, 1.4vh, 12px);
+    }
+
+    .chalk-btn {
+        font-size: clamp(9px, 2.4vw, 12px);
+        padding: clamp(8px, 1.2vh, 11px) clamp(8px, 2vw, 14px);
+    }
+
+    .name-input {
+        font-size: clamp(9px, 2.4vw, 12px);
+        padding: clamp(8px, 1.2vh, 11px) clamp(8px, 2vw, 13px);
+    }
+
+    /* mobile bottom bar: EN left, gear right */
+    .mobile-bottom-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        padding: 0 4px clamp(4px, 1vh, 8px);
+    }
+
+    .mobile-bottom-bar .lang-btn {
+        font-size: 12px;
+        padding: 5px 13px;
+        border-width: 2.5px;
+    }
+
+    .mobile-bottom-bar .icon-btn {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* very tiny phones (≤340px) */
+@media (max-width: 340px) {
+    .logo {
+        width: 130px;
+    }
+
+    .character-display {
+        width: 80px;
+        height: 92px;
+    }
+
+    .name-row {
+        flex-direction: column;
+    }
+
+    .party-row {
+        flex-direction: column;
+    }
+
+    .arrow-btn {
+        width: 26px;
+        height: 26px;
+        padding: 5px;
+    }
+}

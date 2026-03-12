@@ -3,13 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "start": "node server/server.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "bufferutil": "^4.1.0",
+    "express": "^5.2.1",
     "gsap": "^3.12.5",
-    "preact": "^10.25.0"
+    "preact": "^10.25.0",
+    "socket.io": "^4.8.3",
+    "utf-8-validate": "^6.0.6"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.8.2",

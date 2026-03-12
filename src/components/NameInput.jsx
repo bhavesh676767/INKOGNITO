@@ -39,25 +39,25 @@ export function NameInput({ value, onChange }) {
       ref={wrapperRef}
       class="ink-name-input ink-chalk-outline"
       style={{
-        padding: '12px 14px 14px',
-        marginBottom: '10px',
+        padding: '20px 18px 18px',
+        marginBottom: '16px',
         position: 'relative'
       }}
     >
       <label
         class="ink-chalk-label"
         style={{
-          fontSize: '11px',
+          fontSize: '16px',
           textTransform: 'uppercase',
           letterSpacing: '0.18em',
-          opacity: 0.8,
-          marginBottom: '3px',
+          opacity: 0.95,
+          marginBottom: '8px',
           display: 'inline-flex',
           gap: '4px',
           alignItems: 'center'
         }}
       >
-        <span>ALIAS</span>
+        <span style={{ color: '#ffffff' }}>ALIAS</span>
         <span
           class="ink-blood-accent"
           style={{ fontFamily: 'var(--ink-font-secondary)' }}

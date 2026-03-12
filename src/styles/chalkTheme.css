@@ -1,5 +1,5 @@
 :root {
-  --ink-bg: #232323;
+  --ink-bg: #0a0a0a;
   --ink-chalk: #ffffff;
   --ink-blood: #8b0000;
   --ink-blood-bright: #a30000;
@@ -13,14 +13,16 @@
 
   --ink-chalk-thickness: 1.5px;
   --ink-chalk-radius: 12px;
-  --ink-chalk-shadow-soft: 0 0 18px rgba(255, 255, 255, 0.04);
-  --ink-blood-glow: 0 0 22px rgba(163, 0, 0, 0.5);
+  --ink-chalk-shadow-soft: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .ink-app-root {
   width: 100%;
   min-height: 100vh;
-  background-color: var(--ink-bg);
+  background:
+    radial-gradient(circle at top, rgba(163, 0, 0, 0.15), transparent 55%),
+    radial-gradient(circle at bottom, rgba(139, 0, 0, 0.22), transparent 60%),
+    var(--ink-bg);
   color: var(--ink-chalk);
   font-family: var(--ink-font-label);
   display: flex;
@@ -51,6 +53,7 @@
       rgba(0, 0, 0, 0.95)
     );
   overflow: hidden;
+  filter: url(#ink-rough-edge);
 }
 
 .ink-chalk-surface::before {
@@ -82,7 +85,7 @@
 .ink-chalk-outline {
   border-radius: var(--ink-chalk-radius);
   border: 1.5px dashed rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .ink-jitter-soft {
@@ -91,7 +94,6 @@
 
 .ink-blood-accent {
   color: var(--ink-blood-bright);
-  text-shadow: var(--ink-blood-glow);
 }
 
 .ink-blood-underline {
@@ -111,16 +113,13 @@
     rgba(163, 0, 0, 0.98),
     rgba(139, 0, 0, 0.92)
   );
-  filter: blur(0.4px);
   border-radius: 999px;
-  box-shadow: 0 0 10px rgba(163, 0, 0, 0.6);
   transform-origin: left;
 }
 
 .ink-chalk-heading {
   font-family: var(--ink-font-heading);
   letter-spacing: 0.03em;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .ink-chalk-label {

@@ -67,10 +67,9 @@ export function LogoJitter() {
       ref={containerRef}
       class="ink-jitter-soft"
       style={{
-        width: '260px',
-        maxWidth: '60vw',
-        margin: '0 auto 12px',
-        filter: 'drop-shadow(0 0 22px rgba(0,0,0,0.75))'
+        width: '420px',
+        maxWidth: '70vw',
+        margin: '0 auto 24px'
       }}
       aria-label="INKOGNITO logo"
     >

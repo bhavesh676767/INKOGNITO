@@ -1,23 +1,208 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>INKOGNITO</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="INKOGNITO – a mysterious chalkboard party game. Enter the lobby and join the secret society."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Gloria+Hallelujah&family=Patrick+Hand&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
-  </html>
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>INKOGNITO</title>
+    <meta name="description" content="INKOGNITO — Choose your character and start playing.">
+    <link rel="stylesheet" href="entry-page.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Black+Han+Sans&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- ══════════════ PRELOADER ══════════════ -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-ghost">
+            <img src="assets/characters/base_character.png" alt="Loading…" class="preloader-ghost-img">
+        </div>
+        <p class="preloader-text">Loading…</p>
+    </div>
+
+    <!-- ══════════════ GAME CONTAINER ══════════════ -->
+    <div class="game-container" id="gameContainer" style="display:none;">
+
+        <!-- star depth layer 3 -->
+        <div class="chalk-noise" aria-hidden="true"></div>
+
+        <!-- ── TOP BAR ── -->
+        <header class="top-bar">
+
+            <!-- Left: settings + sound (desktop/tablet only) -->
+            <div class="top-left-icons">
+                <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+                    <img src="assets/UI Chalk/UI_Button_Chalk-2.png" alt="">
+                </button>
+                <button class="icon-btn" id="soundBtn" aria-label="Toggle sound">
+                    <img src="assets/UI Chalk/UI_Button_Chalk-3.png" alt="" id="soundIcon">
+                </button>
+            </div>
+
+            <!-- Center: Logo -->
+            <div class="logo-wrapper">
+                <img src="assets/logo/frame1.png" alt="INKOGNITO" class="logo" id="mainLogo">
+            </div>
+
+            <!-- Right: Language dropdown (desktop/tablet only) -->
+            <div class="top-right">
+                <div class="lang-dropdown" id="langDropdown">
+                    <button class="lang-btn" id="langBtn" aria-haspopup="listbox" aria-expanded="false">
+                        EN
+                    </button>
+                    <div class="lang-menu" id="langMenu" role="listbox" aria-label="Select language">
+                        <button class="lang-option active" data-lang="EN">EN — English</button>
+                        <button class="lang-option" data-lang="ES">ES — Español</button>
+                        <button class="lang-option" data-lang="FR">FR — Français</button>
+                        <button class="lang-option" data-lang="DE">DE — Deutsch</button>
+                        <button class="lang-option" data-lang="PT">PT — Português</button>
+                        <button class="lang-option" data-lang="TR">TR — Türkçe</button>
+                    </div>
+                </div>
+            </div>
+
+        </header>
+
+        <!-- ── CENTERING WRAPPER ── -->
+        <main class="main-content">
+
+            <!-- ── INVITE NOTIFICATION ── -->
+            <div id="inviteNotification" class="invite-notification" style="display:none;">
+                <p>You're about to join room <strong id="inviteRoomCode" style="color:var(--highlight-color,#ffca28);"></strong></p>
+                <p class="invite-subtext">Select your character and name, then press START.</p>
+                <button id="leavePartyBtn" class="chalk-btn leave-party-btn">Leave Party</button>
+            </div>
+
+            <!-- ── THE CARD ── -->
+            <div class="game-card">
+
+                <!-- LEFT: Character selector -->
+                <section class="character-panel" aria-label="Character selection">
+                    <div class="character-display">
+
+                        <!-- Hat arrows -->
+                        <button class="arrow-btn arrow-hat-prev" id="hatPrev" aria-label="Previous hat">
+                            <img src="assets/UI Chalk/Chalk_Arrow_Projectiles-1.png" alt="">
+                        </button>
+                        <button class="arrow-btn arrow-hat-next" id="hatNext" aria-label="Next hat">
+                            <img src="assets/UI Chalk/Chalk_Arrow_Projectiles-1.png" alt="">
+                        </button>
+
+                        <!-- Expression arrows -->
+                        <button class="arrow-btn arrow-expr-prev" id="exprPrev" aria-label="Previous expression">
+                            <img src="assets/UI Chalk/Chalk_Arrow_Projectiles-1.png" alt="">
+                        </button>
+                        <button class="arrow-btn arrow-expr-next" id="exprNext" aria-label="Next expression">
+                            <img src="assets/UI Chalk/Chalk_Arrow_Projectiles-1.png" alt="">
+                        </button>
+
+                        <!-- Avatar -->
+                        <div class="avatar" id="avatar">
+                            <img src="assets/characters/base_character.png" alt="Ghost character"
+                                class="char-layer base-layer">
+                            <img src="assets/characters/hats/MarioHat.png" alt="" class="char-layer hat-layer"
+                                id="hatLayer">
+                            <img src="assets/characters/expressions/glasses.png" alt="" class="char-layer expr-layer"
+                                id="exprLayer">
+                        </div>
+
+                    </div>
+
+                    <!-- Random -->
+                    <button class="random-btn" id="randomBtn" aria-label="Random character">
+                        <img src="assets/UI Chalk/randombutton.png" alt="Random">
+                    </button>
+                </section>
+
+                <!-- RIGHT: Name + actions -->
+                <section class="actions-panel" aria-label="Game options">
+
+                    <h1 class="panel-heading">Choose a name and a character</h1>
+
+                    <div class="name-row">
+                        <div class="input-wrapper">
+                            <input type="text" id="nameInput" class="name-input" placeholder="ENTER A NAME"
+                                maxlength="20" autocomplete="off" aria-label="Enter your name">
+                        </div>
+                        <button class="chalk-btn submit-btn" id="submitBtn">SUBMIT</button>
+                    </div>
+
+                    <button class="chalk-btn start-btn" id="startGameBtn">START GAME</button>
+
+                    <div class="party-row">
+                        <button class="chalk-btn party-btn" id="createPartyBtn">CREATE PARTY</button>
+                        <button class="chalk-btn join-btn" id="joinBtn">JOIN</button>
+                    </div>
+
+                </section>
+
+            </div><!-- /.game-card -->
+
+        </main><!-- /.main-content -->
+
+        <!-- ── MOBILE BOTTOM BAR (≤480px only, shown via CSS) ── -->
+        <div class="mobile-bottom-bar" aria-hidden="true">
+            <button class="lang-btn" id="langBtnMobile">EN</button>
+            <button class="icon-btn" id="settingsBtnMobile" aria-label="Settings">
+                <img src="assets/UI Chalk/UI_Button_Chalk-2.png" alt="">
+            </button>
+        </div>
+
+    </div><!-- /.game-container -->
+
+    <!-- Toast -->
+    <div class="toast-msg" id="toastMsg" role="alert" aria-live="polite"></div>
+
+    <!-- ══════════════ LANGUAGE DROPDOWN LOGIC ══════════════ -->
+    <script>
+        (function () {
+            const btn = document.getElementById('langBtn');
+            const menu = document.getElementById('langMenu');
+            const btnMob = document.getElementById('langBtnMobile');
+
+            function setLang(code) {
+                // update both buttons
+                btn.childNodes[0].textContent = code + ' ';
+                if (btnMob) btnMob.textContent = code;
+                menu.querySelectorAll('.lang-option').forEach(o =>
+                    o.classList.toggle('active', o.dataset.lang === code));
+            }
+
+            function toggleMenu(e) {
+                e.stopPropagation();
+                const open = menu.classList.toggle('open');
+                btn.setAttribute('aria-expanded', open);
+            }
+
+            btn.addEventListener('click', toggleMenu);
+
+            menu.querySelectorAll('.lang-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    setLang(opt.dataset.lang);
+                    menu.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                });
+            });
+
+            document.addEventListener('click', () => {
+                menu.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            });
+
+            // close on Escape
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    menu.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        })();
+    </script>
+
+    <script type="module" src="entry-page.js"></script>
+</body>
+
+</html>
