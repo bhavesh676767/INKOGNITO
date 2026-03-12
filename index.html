@@ -7,11 +7,141 @@
     <title>INKOGNITO</title>
     <meta name="description" content="INKOGNITO — Choose your character and start playing.">
     <link rel="stylesheet" href="entry-page.css">
+    <link rel="stylesheet" href="public/shared/tooltip-system.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Black+Han+Sans&display=swap"
         rel="stylesheet">
 </head>
+
+<canvas id="starCanvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+
+<script>
+(function () {
+  const prefersReduced =
+    window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const canvas = document.getElementById('starCanvas');
+  if (!canvas || prefersReduced) {
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  const STAR_COUNT = 340;
+  const stars = [];
+  const shootingStars = [];
+
+  function initStars() {
+    stars.length = 0;
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.8 + 0.3,
+        alpha: Math.random() * 0.7 + 0.3,
+        twinkleSpeed: Math.random() * 0.02 + 0.005,
+        twinkleOffset: Math.random() * Math.PI * 2,
+        color:
+          Math.random() < 0.15
+            ? `hsl(${200 + Math.random() * 60},80%,92%)`
+            : Math.random() < 0.07
+            ? `hsl(${30 + Math.random() * 30},90%,92%)`
+            : '#ffffff',
+        giant: Math.random() < 0.04
+      });
+    }
+  }
+
+  function spawnShootingStar() {
+    shootingStars.push({
+      x: Math.random() * canvas.width * 0.6,
+      y: Math.random() * canvas.height * 0.4,
+      len: 90 + Math.random() * 130,
+      speed: 7 + Math.random() * 8,
+      alpha: 1,
+      angle: Math.PI / 5 + (Math.random() - 0.5) * 0.3,
+      life: 1
+    });
+  }
+
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    t += 0.012;
+
+    for (const s of stars) {
+      const tw =
+        0.5 + 0.5 * Math.sin(t * s.twinkleSpeed * 50 + s.twinkleOffset);
+      const a = s.alpha * (0.5 + 0.5 * tw);
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.fillStyle = s.color;
+      if (s.giant) {
+        ctx.translate(s.x, s.y);
+        for (let k = 0; k < 4; k++) {
+          ctx.save();
+          ctx.rotate((k * Math.PI) / 4);
+          ctx.fillRect(-0.7, -s.r * 2.6, 1.4, s.r * 5.2);
+          ctx.restore();
+        }
+      } else {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    for (let i = shootingStars.length - 1; i >= 0; i--) {
+      const ss = shootingStars[i];
+      ss.life -= 0.022;
+      if (ss.life <= 0) {
+        shootingStars.splice(i, 1);
+        continue;
+      }
+      ss.x += Math.cos(ss.angle) * ss.speed;
+      ss.y += Math.sin(ss.angle) * ss.speed;
+      const tx = ss.x - Math.cos(ss.angle) * ss.len;
+      const ty = ss.y - Math.sin(ss.angle) * ss.len;
+      const g = ctx.createLinearGradient(tx, ty, ss.x, ss.y);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(1, `rgba(255,255,255,${ss.life * 0.9})`);
+      ctx.save();
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(ss.x, ss.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => {
+    resize();
+    initStars();
+  });
+  resize();
+  initStars();
+  draw();
+  setInterval(spawnShootingStar, 2800 + Math.random() * 2000);
+})();
+</script>
 
 <body>
 
@@ -100,7 +230,7 @@
                         </button>
 
                         <!-- Avatar -->
-                        <div class="avatar" id="avatar">
+                        <div class="avatar" id="avatar" data-tooltip="Customize your character&#10;Use arrows to change hats and expressions">
                             <img src="assets/characters/base_character.png" alt="Ghost character"
                                 class="char-layer base-layer">
                             <img src="assets/characters/hats/MarioHat.png" alt="" class="char-layer hat-layer"
@@ -112,7 +242,7 @@
                     </div>
 
                     <!-- Random -->
-                    <button class="random-btn" id="randomBtn" aria-label="Random character">
+                    <button class="random-btn" id="randomBtn" aria-label="Random character" data-tooltip="Randomize your character">
                         <img src="assets/UI Chalk/randombutton.png" alt="Random">
                     </button>
                 </section>
@@ -124,17 +254,20 @@
 
                     <div class="name-row">
                         <div class="input-wrapper">
-                            <input type="text" id="nameInput" class="name-input" placeholder="ENTER A NAME"
-                                maxlength="20" autocomplete="off" aria-label="Enter your name">
+                            <div class="name-input-container" style="position: relative;">
+                                <input type="text" id="nameInput" class="name-input" placeholder="ENTER A NAME"
+                                    maxlength="20" autocomplete="off" aria-label="Enter your name">
+                                <div id="nameStatusIcon" class="name-status-icon"></div>
+                            </div>
+                            <div class="name-helper-text">This is how other players will see you</div>
                         </div>
-                        <button class="chalk-btn submit-btn" id="submitBtn">SUBMIT</button>
                     </div>
 
-                    <button class="chalk-btn start-btn" id="startGameBtn">START GAME</button>
+                    <button class="chalk-btn start-btn" id="startGameBtn" data-tooltip="Join the room with your selected character">START GAME</button>
 
                     <div class="party-row">
-                        <button class="chalk-btn party-btn" id="createPartyBtn">CREATE PARTY</button>
-                        <button class="chalk-btn join-btn" id="joinBtn">JOIN</button>
+                        <button class="chalk-btn party-btn" id="createPartyBtn" data-tooltip="Create a private room and invite friends">CREATE PARTY</button>
+                        <button class="chalk-btn join-btn" id="joinBtn" data-tooltip="Join a room using a room code">JOIN</button>
                     </div>
 
                 </section>
@@ -202,7 +335,21 @@
         })();
     </script>
 
+    <script src="public/shared/tooltip-system.js"></script>
+    <script src="public/shared/socket-client.js"></script>
+    <script src="public/shared/config.js"></script>
     <script type="module" src="entry-page.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize tooltips for elements with data-tooltip attribute
+            document.querySelectorAll('[data-tooltip]').forEach(element => {
+                const text = element.getAttribute('data-tooltip');
+                if (text && window.TooltipSystem) {
+                    window.TooltipSystem.addToElement(element, text.replace('&#10;', '\n'));
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

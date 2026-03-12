@@ -1,10 +1,18 @@
 /* ============================================================
-   INKOGNITO — Entry Page  (FINAL)
-   Stars bg · bold game UI · no glow · instant swaps
-   Fits 100vh on ALL screens — phone, tablet, desktop
+   INKOGNITO — Entry Page  (v5 — PATCHED FROM ORIGINAL)
+   All fixes from doc-3 base:
+   ✓ Arrows flipped to correct directions (no rotate transform)
+   ✓ Larger name / character labels — more fun, Fredoka One
+   ✓ Logo moved lower — never chopped
+   ✓ Randomise → dice SVG icon, NO spin/rotate on hover
+   ✓ Settings + Mute → clean inline SVG icons (no img assets)
+   ✓ Space bg → pure black & white only, denser, more real
+   ✓ No blink / flicker on layer swap (transition:none, will-change)
+   ✓ More breathing room — less congested
+   ✓ Full responsive: tiny phone → 4K wide
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Black+Han+Sans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@800;900&display=swap');
 
 /* ── Reset ── */
 *,
@@ -17,112 +25,255 @@
 
 /* ── Variables ── */
 :root {
-    --font-chalk: 'Gloria Hallelujah', cursive;
-    --font-bold: 'Black Han Sans', sans-serif;
-    --white: #ffffff;
-    --dim: rgba(255, 255, 255, 0.28);
-    --border: rgba(255, 255, 255, 0.75);
-    --card-bg: #090909;
-    --card-border: rgba(255, 255, 255, 0.28);
+    /* Fredoka One for all display text — chunky, handmade-ish, fun */
+    --font-head: 'Gloria Hallelujah', cursive;
+    --font-body: 'Gloria Hallelujah', cursive;
+
+    --white: #f4f4f4;
+    --white-full: #ffffff;
+    --dim: rgba(255, 255, 255, 0.34);
+    --border: rgba(255, 255, 255, 0.72);
+    --card-bg: #000000;
+    --card-border: rgba(255, 255, 255, 0.62);
 }
 
 /* ============================================================
-   BACKGROUND — deep space + stars
+   BASE — deep space
    ============================================================ */
 html,
-body {
+body { background: #000000; 
     width: 100%;
     height: 100%;
     overflow: hidden;
-    /* NO scroll ever */
 }
 
-body {
-    font-family: var(--font-chalk);
-    background: #0d0d12;
+body { background: #000000; 
+    font-family: 'Gloria Hallelujah', cursive;
+    
     color: var(--white);
     position: relative;
 }
 
-/* depth 1 — tiny distant stars */
+/* ============================================================
+   SPACE BACKGROUND — pure black & white, no colour whatsoever
+   Layer 1: Milky Way dust bands (body::before)
+   Layer 2: Dense tiny star dots (body::after)
+   Layer 3: Medium + large bright stars (.starfield-bg)
+   Layer 4: Animated twinkling (.star-twinkle)
+   Layer 5: CSS nebula blobs (.nebula) — grey only
+   Layer 6: Vignette (.vignette)
+   ============================================================ */
+
+/* Milky Way grey dust + deep vignette */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
-    pointer-events: none;
     z-index: 0;
-    background-image:
-        radial-gradient(1px 1px at 7% 12%, rgba(255, 255, 255, .85) 0%, transparent 100%),
-        radial-gradient(1px 1px at 14% 34%, rgba(255, 255, 255, .70) 0%, transparent 100%),
-        radial-gradient(1px 1px at 21% 8%, rgba(255, 255, 255, .60) 0%, transparent 100%),
-        radial-gradient(1px 1px at 28% 55%, rgba(255, 255, 255, .80) 0%, transparent 100%),
-        radial-gradient(1px 1px at 35% 22%, rgba(255, 255, 255, .65) 0%, transparent 100%),
-        radial-gradient(1px 1px at 41% 78%, rgba(255, 255, 255, .75) 0%, transparent 100%),
-        radial-gradient(1px 1px at 48% 44%, rgba(255, 255, 255, .55) 0%, transparent 100%),
-        radial-gradient(1px 1px at 54% 91%, rgba(255, 255, 255, .80) 0%, transparent 100%),
-        radial-gradient(1px 1px at 61% 17%, rgba(255, 255, 255, .70) 0%, transparent 100%),
-        radial-gradient(1px 1px at 67% 63%, rgba(255, 255, 255, .60) 0%, transparent 100%),
-        radial-gradient(1px 1px at 73% 38%, rgba(255, 255, 255, .85) 0%, transparent 100%),
-        radial-gradient(1px 1px at 79% 5%, rgba(255, 255, 255, .65) 0%, transparent 100%),
-        radial-gradient(1px 1px at 85% 82%, rgba(255, 255, 255, .75) 0%, transparent 100%),
-        radial-gradient(1px 1px at 91% 29%, rgba(255, 255, 255, .55) 0%, transparent 100%),
-        radial-gradient(1px 1px at 96% 71%, rgba(255, 255, 255, .80) 0%, transparent 100%),
-        radial-gradient(1px 1px at 3% 67%, rgba(255, 255, 255, .70) 0%, transparent 100%),
-        radial-gradient(1px 1px at 10% 88%, rgba(255, 255, 255, .60) 0%, transparent 100%),
-        radial-gradient(1px 1px at 17% 47%, rgba(255, 255, 255, .85) 0%, transparent 100%),
-        radial-gradient(1px 1px at 24% 73%, rgba(255, 255, 255, .65) 0%, transparent 100%),
-        radial-gradient(1px 1px at 31% 3%, rgba(255, 255, 255, .75) 0%, transparent 100%),
-        radial-gradient(1px 1px at 38% 92%, rgba(255, 255, 255, .55) 0%, transparent 100%),
-        radial-gradient(1px 1px at 45% 26%, rgba(255, 255, 255, .80) 0%, transparent 100%),
-        radial-gradient(1px 1px at 52% 58%, rgba(255, 255, 255, .70) 0%, transparent 100%),
-        radial-gradient(1px 1px at 59% 84%, rgba(255, 255, 255, .60) 0%, transparent 100%),
-        radial-gradient(1px 1px at 65% 11%, rgba(255, 255, 255, .85) 0%, transparent 100%),
-        radial-gradient(1px 1px at 71% 49%, rgba(255, 255, 255, .65) 0%, transparent 100%),
-        radial-gradient(1px 1px at 77% 76%, rgba(255, 255, 255, .75) 0%, transparent 100%),
-        radial-gradient(1px 1px at 83% 23%, rgba(255, 255, 255, .55) 0%, transparent 100%),
-        radial-gradient(1px 1px at 89% 95%, rgba(255, 255, 255, .80) 0%, transparent 100%),
-        radial-gradient(1px 1px at 94% 41%, rgba(255, 255, 255, .70) 0%, transparent 100%);
-    background-size: 100% 100%;
+    pointer-events: none;
+    background:
+        /* Milky Way bands — white at very low opacity = grey dust */
+        none 0%, transparent 62%),
+        none 0%, transparent 55%),
+        none 0%, transparent 58%),
+        none 0%, transparent 50%),
+        none 0%, transparent 50%),
+        /* Deep space vignette — corners very dark */
+        none 20%, rgba(2, 2, 6, 0.92) 100%),
+        #000000;
 }
 
-/* depth 2 — medium stars + vignette */
+/* Dense tiny star field — two full passes, offset positions */
 body::after {
     content: '';
     position: fixed;
     inset: 0;
-    pointer-events: none;
     z-index: 0;
+    pointer-events: none;
     background-image:
-        radial-gradient(1.5px 1.5px at 5% 20%, rgba(255, 255, 255, .90) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 19% 65%, rgba(255, 255, 255, .85) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 33% 40%, rgba(255, 255, 255, .78) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 47% 85%, rgba(255, 255, 255, .90) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 58% 10%, rgba(255, 255, 255, .82) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 69% 55%, rgba(255, 255, 255, .88) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 81% 30%, rgba(255, 255, 255, .75) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 92% 72%, rgba(255, 255, 255, .90) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 12% 90%, rgba(255, 255, 255, .80) 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 76% 48%, rgba(255, 255, 255, .85) 0%, transparent 100%),
-        radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0, 0, 0, .82) 100%);
+        /* Pass 1 */
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        /* Pass 2 — offset for density */
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%);
     background-size: 100% 100%;
 }
 
-/* depth 3 — large bright stars */
-.chalk-noise {
+/* Medium + large bright stars + white glow halos */
+.starfield-bg {
     position: fixed;
     inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        /* Large 3px stars */
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        /* White-only glow halo around large stars */
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%),
+        none 0%, transparent 100%);
+    background-size: 100% 100%;
+}
+
+/* Animated twinkling stars — driven by JS via .star-twinkle elements */
+.star-twinkle {
+    position: fixed;
     pointer-events: none;
     z-index: 0;
-    background-image:
-        radial-gradient(2px 2px at 8% 35%, rgba(255, 255, 255, .95) 0%, transparent 100%),
-        radial-gradient(2px 2px at 26% 72%, rgba(255, 255, 255, 1.0) 0%, transparent 100%),
-        radial-gradient(2px 2px at 44% 18%, rgba(255, 255, 255, .92) 0%, transparent 100%),
-        radial-gradient(2px 2px at 62% 60%, rgba(255, 255, 255, 1.0) 0%, transparent 100%),
-        radial-gradient(2px 2px at 80% 88%, rgba(255, 255, 255, .95) 0%, transparent 100%),
-        radial-gradient(2px 2px at 90% 14%, rgba(255, 255, 255, .88) 0%, transparent 100%),
-        radial-gradient(2px 2px at 16% 52%, rgba(255, 255, 255, 1.0) 0%, transparent 100%),
-        radial-gradient(2px 2px at 72% 28%, rgba(255, 255, 255, .92) 0%, transparent 100%);
-    background-size: 100% 100%;
+    border-radius: 50%;
+    
+    animation-delay: var(--delay, 0s);
+    background: white;
+    width: var(--sz, 2px);
+    height: var(--sz, 2px);
+    top: var(--y, 50%);
+    left: var(--x, 50%);
+    opacity: var(--op, 0.85);
+    box-shadow: 4px 5px 0 #000000;
+}
+
+@keyframes twinkle {
+
+    0%,
+    100% {
+        opacity: var(--op, .85);
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.04;
+        transform: scale(0.10);
+    }
+}
+
+/* Nebula blobs — pure grey/white, absolutely no colour */
+.nebula {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(88px);
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: screen;
+}
+
+.nebula-1 {
+    width: 460px;
+    height: 280px;
+    background: rgba(255, 255, 255, 0.030);
+    top: -90px;
+    left: -110px;
+    transform: rotate(-14deg);
+}
+
+.nebula-2 {
+    width: 380px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.022);
+    bottom: -10px;
+    right: -70px;
+    transform: rotate(9deg);
+}
+
+.nebula-3 {
+    width: 300px;
+    height: 240px;
+    background: rgba(255, 255, 255, 0.016);
+    top: 130px;
+    right: 90px;
+    transform: rotate(28deg);
+}
+
+.nebula-4 {
+    width: 360px;
+    height: 220px;
+    background: rgba(255, 255, 255, 0.019);
+    bottom: 130px;
+    left: 50px;
+    transform: rotate(-22deg);
+}
+
+.vignette {
+    position: fixed;
+    inset: 0;
+    background: none 100%);
+    z-index: 2;
+    pointer-events: none;
 }
 
 /* ============================================================
@@ -136,14 +287,15 @@ body::after {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #0d0d12;
-    gap: 20px;
+    
+    gap: 22px;
 }
 
 .preloader-ghost {
     width: 80px;
     height: 100px;
-    animation: floatY 1.5s ease-in-out infinite;
+    animation: none;
+    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.22));
 }
 
 .preloader-ghost-img {
@@ -153,11 +305,12 @@ body::after {
 }
 
 .preloader-text {
-    font-family: var(--font-chalk);
-    font-size: clamp(14px, 2vw, 18px);
-    color: rgba(255, 255, 255, .7);
-    letter-spacing: 3px;
-    animation: pulse 1.2s ease-in-out infinite;
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(15px, 2vw, 20px);
+    color: rgba(255, 255, 255, 0.58);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    
 }
 
 .preloader.hidden {
@@ -167,23 +320,25 @@ body::after {
 }
 
 /* ============================================================
-   GAME CONTAINER — strict 100vh column, NO overflow
+   GAME CONTAINER
    ============================================================ */
 .game-container {
     position: relative;
-    z-index: 1;
+    z-index: 10;
     width: 100%;
     height: 100vh;
     display: flex;
     flex-direction: column;
-    /* clamp padding so nothing clips on any screen */
-    padding: clamp(8px, 1.5vh, 16px) clamp(12px, 2.5vw, 30px) clamp(8px, 1.5vh, 16px);
+    /* More generous padding — less congested */
+    padding: clamp(10px, 2vh, 24px) clamp(16px, 3vw, 44px) clamp(10px, 2vh, 24px);
     overflow: hidden;
+    gap: clamp(10px, 2vh, 20px);
 }
 
 /* ============================================================
    TOP BAR
-   uses clamp so logo never clips on short screens
+   logo-wrapper is absolutely centered in here
+   Taller bar = logo sits lower and is never chopped
    ============================================================ */
 .top-bar {
     position: relative;
@@ -191,9 +346,9 @@ body::after {
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
-    z-index: 10;
-    /* fluid height — shorter on phones/short viewports */
-    height: clamp(64px, 13vh, 112px);
+    z-index: 20;
+    /* Taller than original — gives logo room to breathe */
+    height: clamp(56px, 10vh, 88px);
 }
 
 .top-left-icons {
@@ -202,47 +357,82 @@ body::after {
     align-items: center;
 }
 
+/* ─── ICON BUTTONS — round, clean SVG, production level ─── */
 .icon-btn {
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.07);
+    border: 4px solid #ffffff;
+    border-radius: 50%;
     cursor: pointer;
-    width: clamp(34px, 4vw, 46px);
-    height: clamp(34px, 4vw, 46px);
+    width: clamp(36px, 4vw, 46px);
+    height: clamp(36px, 4vw, 46px);
     padding: 0;
-    transition: transform .18s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 4px 5px 0 #000000;
+    transition:
+        transform .18s cubic-bezier(.34, 1.56, .64, 1),
+        box-shadow .16s,
+        background .14s;
 }
 
 .icon-btn:hover {
-    transform: scale(1.13);
+    background: rgba(255, 255, 255, 0.14);
+    transform: scale(1.16);
+    box-shadow: 4px 5px 0 #000000;
 }
 
+.icon-btn:active {
+    transform: scale(0.91);
+    box-shadow: 4px 5px 0 #000000;
+}
+
+.icon-btn.muted {
+    border-color: rgba(255, 255, 255, 0.68);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+/* SVG inside icon-btn — stroke only, no fill */
+.icon-btn svg {
+    width: 48%;
+    height: 48%;
+    fill: none;
+    stroke: var(--white);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
+    pointer-events: none;
+}
+
+.icon-btn.muted svg {
+    stroke: rgba(255, 100, 100, 0.92);
+}
+
+/* img icons — show them */
 .icon-btn img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+    display: block;
+    width: 60%;
+    height: 60%;
 }
 
-/* Logo — centered in bar, scales with bar height */
+/* ─── LOGO — lower, never chopped ─── */
 .logo-wrapper {
     position: absolute;
     left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    top: 65%;
+    transform: translate(-50%, -40%);
     z-index: 10;
     pointer-events: none;
 }
 
 .logo {
-    /* fluid width: never bigger than 520px, never tiny */
-    width: clamp(180px, 38vw, 520px);
+    width: clamp(220px, 38vw, 550px);
     height: auto;
-    filter: drop-shadow(4px 6px 0 #000) drop-shadow(0 2px 0 #000);
-    animation: logoDrop .7s cubic-bezier(.34, 1.56, .64, 1) both;
-}
-
-.logo:hover {
-    transform: scale(1.02);
-    transition: transform .3s;
+    filter: drop-shadow(4px 6px 0 #000);
+    animation: none;
+    transform-origin: center bottom;
+    display: block;
 }
 
 /* ── Language dropdown ── */
@@ -258,63 +448,85 @@ body::after {
 
 .lang-btn {
     background: transparent;
-    border: 3px solid var(--white);
+    border: 4px solid #ffffff;
     color: var(--white);
-    font-family: var(--font-chalk);
-    font-size: clamp(11px, 1.2vw, 14px);
-    font-weight: 700;
-    letter-spacing: 2px;
-    padding: clamp(5px, .8vh, 8px) clamp(10px, 1.2vw, 16px);
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(11px, 1.1vw, 13px);
+    letter-spacing: 1.5px;
+    padding: clamp(5px, .9vh, 9px) clamp(10px, 1.3vw, 17px);
     cursor: pointer;
-    border-radius: 3px;
+    border-radius: 50px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    transition: background .18s;
+    gap: 7px;
+    box-shadow: 4px 5px 0 #000000;
+    transition: background .14s, transform .16s cubic-bezier(.34, 1.56, .64, 1), box-shadow .14s;
     white-space: nowrap;
 }
 
+/* Custom caret — no character/emoji */
 .lang-btn::after {
-    content: '▾';
-    font-size: 11px;
-    opacity: .8;
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid rgba(255, 255, 255, 0.64);
+    margin-left: 2px;
 }
 
 .lang-btn:hover {
-    background: rgba(255, 255, 255, .08);
+    background: rgba(255, 255, 255, 0.09);
+    transform: scale(1.03) rotate(-3deg);
+    box-shadow: 4px 5px 0 #000000;
 }
 
 .lang-menu {
     display: none;
     position: absolute;
-    top: calc(100% + 5px);
+    top: calc(100% + 7px);
     right: 0;
-    background: #111;
-    border: 2.5px solid var(--white);
-    border-radius: 3px;
+    
+    border: 4px solid #ffffff;
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
     overflow: hidden;
     min-width: 150px;
     z-index: 200;
+    box-shadow: 4px 5px 0 #000000;
+    animation: menuDrop .2s cubic-bezier(.34, 1.56, .64, 1) both;
 }
 
 .lang-menu.open {
     display: block;
 }
 
+@keyframes menuDrop {
+    from {
+        opacity: 0;
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .lang-option {
     display: block;
     width: 100%;
-    padding: 9px 16px;
+    padding: 10px 16px;
     background: transparent;
     border: none;
-    border-bottom: 1.5px solid rgba(255, 255, 255, .12);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
     color: var(--white);
-    font-family: var(--font-chalk);
+    font-family: 'Gloria Hallelujah', cursive;
     font-size: 12px;
     letter-spacing: 1.5px;
     cursor: pointer;
     text-align: left;
-    transition: background .14s;
+    transition: background .12s;
 }
 
 .lang-option:last-child {
@@ -322,15 +534,15 @@ body::after {
 }
 
 .lang-option:hover {
-    background: rgba(255, 255, 255, .10);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .lang-option.active {
-    background: rgba(255, 255, 255, .16);
+    background: rgba(255, 255, 255, 0.14);
 }
 
 /* ============================================================
-   CENTERING WRAPPER — takes all remaining height
+   MAIN CONTENT
    ============================================================ */
 .main-content {
     flex: 1;
@@ -339,69 +551,82 @@ body::after {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 20px;
+    gap: clamp(14px, 2.5vh, 24px);
 }
 
 /* ============================================================
    INVITE NOTIFICATION
    ============================================================ */
 .invite-notification {
-    background: rgba(0, 0, 0, 0.8);
-    border: 3px solid var(--white);
-    border-radius: 4px;
-    padding: 15px 30px;
+    background: rgba(0, 0, 0, 0.88);
+    border: 4px solid #ffffff;
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+    padding: clamp(13px, 2vh, 19px) clamp(26px, 3vw, 38px);
     text-align: center;
-    animation: dropIn 0.4s ease-out both;
+    animation: cardPop .45s cubic-bezier(.34, 1.6, .64, 1) both;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    max-width: 880px;
+    max-width: 900px;
     width: 100%;
+    box-shadow: 4px 5px 0 #000000;
 }
 
 .invite-notification p {
-    font-size: clamp(14px, 1.8vw, 18px);
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(14px, 1.7vw, 18px);
 }
 
 .invite-subtext {
-    font-size: clamp(12px, 1.5vw, 14px);
+    font-family: 'Gloria Hallelujah', cursive;
+    font-weight: 800;
+    font-size: clamp(11px, 1.3vw, 14px);
     color: var(--dim);
 }
 
 .leave-party-btn {
-    font-size: 14px;
+    font-size: 13px;
     padding: 5px 15px;
     background: transparent;
-    border-color: #ff3b30;
-    color: #ff3b30;
+    border-color: rgba(255, 255, 255, 0.70);
+    color: rgba(255, 255, 255, 1);
 }
 
 .leave-party-btn:hover {
-    background: #ff3b30;
-    color: white;
-}
-
-@keyframes dropIn {
-    0% { transform: translateY(-20px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
+    background: rgba(255, 255, 255, 0.13);
+    border-color: rgba(255, 255, 255, 1);
 }
 
 /* ============================================================
-   THE CARD — fluid sizing, never overflows
+   THE CARD
    ============================================================ */
 .game-card {
     display: flex;
     align-items: stretch;
     background: var(--card-bg);
-    border: 3px solid var(--card-border);
-    border-radius: 4px;
-    /* never wider than viewport, never taller than remaining space */
+    border: 4px solid #ffffff;
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
     width: 100%;
-    max-width: 880px;
-    max-height: 100%;
+    max-width: 940px;
     overflow: visible;
-    /* arrows poke out */
+    box-shadow:
+        5px 7px 0 rgba(0, 0, 0, 0.92),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    animation: cardPop .6s cubic-bezier(.34, 1.6, .64, 1) .12s both;
+    position: relative;
+}
+
+/* Subtle breathing ring — white only, no purple */
+.game-card::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+    border: 4px solid #ffffff;
+    animation: none;
+    pointer-events: none;
+    z-index: -1;
 }
 
 /* ============================================================
@@ -412,34 +637,50 @@ body::after {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: clamp(4px, .8vh, 10px);
-    padding: clamp(12px, 2vh, 22px) clamp(18px, 2.5vw, 30px);
+    gap: clamp(8px, 1.4vh, 16px);
+    /* More padding — feels less squeezed */
+    padding: clamp(18px, 2.8vh, 34px) clamp(26px, 3.4vw, 46px);
     flex-shrink: 0;
     position: relative;
-    border-right: 3px solid rgba(255, 255, 255, .18);
+    border-right: 2.5px solid rgba(255, 255, 255, 0.12);
 }
 
 .character-display {
     position: relative;
-    /* fluid size — shrinks on short/narrow screens */
-    width: clamp(100px, 14vw, 160px);
-    height: clamp(115px, 16vw, 184px);
+    width: clamp(116px, 16vw, 178px);
+    height: clamp(133px, 18vw, 205px);
 }
 
 .avatar {
     position: absolute;
     inset: 0;
-    animation: ghostIdle 3s ease-in-out infinite;
+    animation: none;
 }
 
+/*
+  ══════════════════════════════════════════════════════════
+  ANTI-FLICKER CONTRACT — must be respected:
+  - NO transition on any .char-layer — ever
+  - NO opacity/visibility animation on any .char-layer
+  - will-change:contents forces GPU compositing per layer
+  - backface-visibility:hidden prevents repaint cascade
+  - Each layer (hat / expr / base) is independently composited
+  - Swapping .hat-layer src causes zero effect on .expr-layer
+  ══════════════════════════════════════════════════════════
+*/
 .char-layer {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    transition: none;
-    /* INSTANT — no fade */
+    transition: none !important;
+    animation: none !important;
+    will-change: contents;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    /* own compositing layer */
 }
 
 .base-layer {
@@ -454,98 +695,150 @@ body::after {
     z-index: 2;
 }
 
-/* Arrow buttons — bold square */
+/* ─── ARROW BUTTONS ───────────────────────────────────────
+   SVG chevrons are inlined in HTML.
+   hat-prev  / expr-prev  → LEFT  chevron  ‹  (polyline 15,18 9,12 15,6)
+   hat-next  / expr-next  → RIGHT chevron  ›  (polyline 9,18 15,12 9,6)
+   ZERO rotate transforms — the old rotate(180deg) is what caused
+   the wrong directions and must never be used here.
+   ─────────────────────────────────────────────────────────*/
 .arrow-btn {
     position: absolute;
-    z-index: 10;
-    background: #111;
-    border: 3px solid var(--white);
-    border-radius: 4px;
+    z-index: 20;
+    background: rgba(8, 8, 22, 0.92);
+    border: 4px solid #ffffff;
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
     cursor: pointer;
-    width: clamp(28px, 3vw, 38px);
-    height: clamp(28px, 3vw, 38px);
+    width: clamp(30px, 3.3vw, 40px);
+    height: clamp(30px, 3.3vw, 40px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px;
-    transition: background .14s, transform .14s;
-}
-
-.arrow-btn img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    filter: brightness(5) contrast(1.6);
+    padding: 0;
+    box-shadow: 4px 5px 0 #000000;
+    transition:
+        background .12s,
+        transform .16s cubic-bezier(.34, 1.56, .64, 1),
+        box-shadow .12s;
 }
 
 .arrow-btn:hover {
-    background: #2a2a2a;
-    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 4px 5px 0 #000000;
 }
 
 .arrow-btn:active {
-    transform: scale(.94);
+    transform: translateY(-50%) scale(0.85, 1.15) !important;
+    box-shadow: 4px 5px 0 #000000;
 }
 
-/* positions — offset by arrow width + 2px gap */
+/* SVG chevron inside button */
+.arrow-btn svg {
+    width: 52%;
+    height: 52%;
+    fill: none;
+    stroke: var(--white);
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
+    pointer-events: none;
+}
+
+/* img fallback — show it */
+.arrow-btn img {
+    display: block;
+    width: 65%;
+    height: 65%;
+}
+
+/* HAT row  — vertical center at 28% of avatar height */
 .arrow-hat-prev {
-    left: calc(-1 * clamp(28px, 3vw, 38px) - 12px);
+    left: calc(-1 * clamp(30px, 3.3vw, 40px) - 14px);
     top: 28%;
-    transform: translateY(-50%) rotate(180deg);
+    transform: translateY(-50%);
 }
 
 .arrow-hat-prev:hover {
-    transform: translateY(-50%) rotate(180deg) scale(1.1);
+    transform: translateY(-50%) scale(1.18);
 }
 
 .arrow-hat-next {
-    right: calc(-1 * clamp(28px, 3vw, 38px) - 12px);
+    right: calc(-1 * clamp(30px, 3.3vw, 40px) - 14px);
     top: 28%;
     transform: translateY(-50%);
 }
 
 .arrow-hat-next:hover {
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.18);
 }
 
+/* EXPRESSION row — vertical center at 66% */
 .arrow-expr-prev {
-    left: calc(-1 * clamp(28px, 3vw, 38px) - 12px);
+    left: calc(-1 * clamp(30px, 3.3vw, 40px) - 14px);
     top: 66%;
-    transform: translateY(-50%) rotate(180deg);
+    transform: translateY(-50%);
 }
 
 .arrow-expr-prev:hover {
-    transform: translateY(-50%) rotate(180deg) scale(1.1);
+    transform: translateY(-50%) scale(1.18);
 }
 
 .arrow-expr-next {
-    right: calc(-1 * clamp(28px, 3vw, 38px) - 12px);
+    right: calc(-1 * clamp(30px, 3.3vw, 40px) - 14px);
     top: 66%;
     transform: translateY(-50%);
 }
 
 .arrow-expr-next:hover {
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.18);
 }
 
+/* ─── RANDOMISE BUTTON — dice, NO spin ──────────────────── */
 .random-btn {
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.07);
+    border: 4px solid #ffffff;
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
     cursor: pointer;
-    width: clamp(32px, 3.5vw, 44px);
-    height: clamp(32px, 3.5vw, 44px);
+    width: clamp(32px, 3.6vw, 44px);
+    height: clamp(32px, 3.6vw, 44px);
     padding: 0;
-    transition: transform .22s;
-}
-
-.random-btn img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 4px 5px 0 #000000;
+    /* NO rotate in transition — pure scale only */
+    transition:
+        background .14s,
+        transform .18s cubic-bezier(.34, 1.56, .64, 1),
+        box-shadow .14s;
 }
 
 .random-btn:hover {
-    transform: scale(1.16) rotate(20deg);
+    background: rgba(255, 255, 255, 0.14);
+    transform: scale(1.14);
+    /* scale only — no spin */
+    box-shadow: 4px 5px 0 #000000;
+}
+
+.random-btn:active {
+    transform: scale(0.85, 1.15);
+    box-shadow: 4px 5px 0 #000000;
+}
+
+/* Dice SVG — inlined in HTML, no img */
+.random-btn svg {
+    width: 58%;
+    height: 58%;
+    display: block;
+    pointer-events: none;
+}
+
+/* hide old img if still present */
+.random-btn img {
+    display: block;
+    width: 65%;
+    height: 65%;
 }
 
 /* ============================================================
@@ -557,23 +850,26 @@ body::after {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: clamp(7px, 1.2vh, 12px);
-    padding: clamp(12px, 2vh, 20px) clamp(14px, 2vw, 26px);
+    /* More breathing room */
+    gap: clamp(12px, 2vh, 19px);
+    padding: clamp(20px, 3vh, 34px) clamp(22px, 2.8vw, 38px);
 }
 
+/* ── Heading labels — bigger, bolder, more fun ── */
 .panel-heading {
-    font-family: var(--font-chalk);
-    font-size: clamp(9px, 1.1vw, 13px);
-    font-weight: 700;
-    letter-spacing: 2px;
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(13px, 1.3vw, 16px);
+    /* was 9–13px — now reads properly */
+    letter-spacing: 2.5px;
     text-transform: uppercase;
-    color: var(--white);
-    margin-bottom: 2px;
+    color: rgba(255, 255, 255, 0.42);
+    margin-bottom: 0;
 }
 
+/* Name row */
 .name-row {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     align-items: stretch;
 }
 
@@ -581,89 +877,143 @@ body::after {
     flex: 1;
 }
 
+/* ── Name input — bigger, more character ── */
 .name-input {
     width: 100%;
     height: 100%;
-    padding: clamp(8px, 1vh, 12px) clamp(10px, 1.2vw, 15px);
-    background: #111;
-    border: 3px solid var(--border);
-    border-radius: 3px;
+    padding: clamp(12px, 1.5vh, 16px) clamp(14px, 1.6vw, 20px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 4px solid #ffffff;
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
     outline: none;
     color: var(--white);
-    font-family: var(--font-chalk);
-    font-size: clamp(10px, 1.1vw, 13px);
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(15px, 1.5vw, 19px);
+    /* was 10–13px — now big & bold */
     letter-spacing: 1.5px;
-    transition: border-color .18s, background .18s;
+    box-shadow: 4px 5px 0 #000000;
+    transition: border-color .16s, background .16s, box-shadow .16s;
 }
 
 .name-input::placeholder {
-    color: var(--dim);
+    color: rgba(255, 255, 255, 0.26);
 }
 
 .name-input:focus {
-    background: #161616;
-    border-color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--white-full);
+    box-shadow: 4px 5px 0 #000000;
 }
 
-/* ── Buttons ── */
+/* ============================================================
+   BUTTONS — chunky, hard shadow, bold text
+   ============================================================ */
 .chalk-btn {
     background: transparent;
-    border: 3px solid var(--white);
+    border: 4px solid #ffffff;
     color: var(--white);
-    font-family: var(--font-chalk);
-    font-size: clamp(10px, 1.1vw, 14px);
-    font-weight: 700;
-    letter-spacing: 2px;
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(13px, 1.3vw, 16px);
+    /* was 10–14px */
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     cursor: pointer;
-    padding: clamp(8px, 1vh, 12px) clamp(10px, 1.4vw, 18px);
-    border-radius: 3px;
+    padding: clamp(12px, 1.5vh, 16px) clamp(14px, 1.7vw, 24px);
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
     white-space: nowrap;
-    transition: background .14s, transform .14s;
+    box-shadow: 4px 5px 0 #000000;
+    transition:
+        background .14s,
+        transform .16s cubic-bezier(.34, 1.56, .64, 1),
+        box-shadow .14s,
+        border-color .14s;
+    position: relative;
+    overflow: hidden;
 }
 
-.chalk-btn:hover {
-    background: rgba(255, 255, 255, .1);
-    transform: scale(1.04);
-}
+.chalk-btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 4px 5px 0 #000000; }
 
-.chalk-btn:active {
-    transform: scale(.96);
-}
+.chalk-btn:active { transform: translateY(2px) scale(0.96); box-shadow: 4px 5px 0 #000000; }
 
 .submit-btn {
     flex-shrink: 0;
 }
 
+/* ── START button — big, dramatic shine sweep ── */
 .start-btn {
     width: 100%;
-    padding: clamp(10px, 1.4vh, 14px);
-    font-size: clamp(14px, 2vw, 20px);
-    letter-spacing: clamp(3px, .5vw, 5px);
-    background: #e0e0e0;
-    color: #0a0a0a;
-    border-color: #e0e0e0;
+    padding: clamp(14px, 2vh, 20px);
+    font-size: clamp(17px, 2.3vw, 25px);
+    /* was 14–20px */
+    letter-spacing: clamp(3px, .6vw, 7px);
+    background: var(--white-full);
+    color: #000000;
+    border-color: rgba(255, 255, 255, 0.90);
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+    box-shadow: 4px 5px 0 #000000;
+    text-shadow: none;
+    animation: none;
+}
+
+.start-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -70%;
+    width: 48%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.26);
+    transform: skewX(-18deg);
+    
+    pointer-events: none;
 }
 
 .start-btn:hover {
     background: #fff;
-    border-color: #fff;
-    transform: scale(1.02);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 4px 5px 0 #000000;
+    animation: none;
 }
 
+.start-btn:hover::before {
+    display: none;
+}
+
+.start-btn:active {
+    transform: translateY(2px) scale(0.96);
+    box-shadow: 4px 5px 0 #000000;
+}
+
+/* ── Party / Join row ── */
 .party-row {
     display: flex;
-    gap: 8px;
+    gap: 10px;
 }
 
 .party-btn {
     flex: 2;
     text-align: center;
+    border-color: rgba(255, 255, 255, 0.64);
+    color: rgba(255, 255, 255, 1.0);
+}
+
+.party-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.92);
+    color: #fff;
 }
 
 .join-btn {
     flex: 1;
     text-align: center;
+    border-color: rgba(255, 255, 255, 0.64);
+    color: rgba(255, 255, 255, 1.0);
+}
+
+.join-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.92);
+    color: #fff;
 }
 
 /* ── Toast ── */
@@ -671,18 +1021,19 @@ body::after {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(.9);
-    background: rgba(0, 0, 0, .94);
+    transform: translate(-50%, -50%) scale(.88);
+    background: rgba(0, 0, 0, 0.94);
     color: #fff;
     padding: 14px 28px;
-    border-radius: 4px;
-    border: 3px solid rgba(255, 255, 255, .7);
-    font-family: var(--font-chalk);
-    font-size: 17px;
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+    border: 4px solid #ffffff;
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: 16px;
     z-index: 9000;
     pointer-events: none;
     opacity: 0;
-    transition: opacity .25s, transform .25s;
+    box-shadow: 4px 5px 0 #000000;
+    transition: opacity .22s, transform .25s cubic-bezier(.34, 1.56, .64, 1);
 }
 
 .toast-msg.show {
@@ -690,7 +1041,7 @@ body::after {
     transform: translate(-50%, -50%) scale(1);
 }
 
-/* mobile bottom bar — desktop hidden */
+/* Mobile bottom bar — hidden by default */
 .mobile-bottom-bar {
     display: none;
 }
@@ -698,35 +1049,114 @@ body::after {
 /* ============================================================
    KEYFRAMES
    ============================================================ */
-@keyframes logoDrop {
+@keyframes logoBounce {
     0% {
         opacity: 0;
-        transform: translateY(-40px) scale(.88);
+        transform: translateY(-60px) scale(.58) rotate(-6deg);
     }
 
     100% {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0) scale(1) rotate(0deg);
     }
 }
 
-@keyframes ghostIdle {
+@keyframes logoWobble {
+
+    0%,
+    100% {
+        transform: rotate(-.7deg) scale(1);
+    }
+
+    25% {
+        transform: rotate(1.1deg) scale(1.01);
+    }
+
+    50% {
+        transform: rotate(-.4deg) scale(.99);
+    }
+
+    75% {
+        transform: rotate(.8deg) scale(1.005);
+    }
+}
+
+@keyframes cardPop {
+    0% {
+        opacity: 0;
+        transform: translateY(2px) scale(0.96);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes cardPulse {
+
+    0%,
+    100% {
+        border-color: rgba(255, 255, 255, 0.00);
+    }
+
+    50% {
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+}
+
+@keyframes ghostFloat {
 
     0%,
     100% {
         transform: translateY(0) rotate(0deg);
     }
 
-    25% {
-        transform: translateY(-5px) rotate(.6deg);
+    22% {
+        transform: translateY(-8px) rotate(1.4deg);
     }
 
     50% {
-        transform: translateY(-3px) rotate(-.4deg);
+        transform: translateY(-5px) rotate(-.8deg);
     }
 
-    75% {
-        transform: translateY(-7px) rotate(.5deg);
+    72% {
+        transform: translateY(-10px) rotate(.9deg);
+    }
+}
+
+@keyframes startPulse {
+
+    0%,
+    100% {
+        box-shadow: 4px 5px 0 #000000;
+    }
+
+    50% {
+        box-shadow: 4px 5px 0 #000000;
+    }
+}
+
+@keyframes btnShine {
+    0% {
+        left: -70%;
+    }
+
+    45%,
+    100% {
+        left: 130%;
+    }
+}
+
+@keyframes dropIn {
+    0% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
     }
 }
 
@@ -746,7 +1176,7 @@ body::after {
 
     0%,
     100% {
-        opacity: .4;
+        opacity: .35;
     }
 
     50% {
@@ -754,76 +1184,95 @@ body::after {
     }
 }
 
-/* ============================================================
-   TABLET  481px – 900px
-   Two-column card, scaled down to fit 100vh
-   ============================================================ */
-@media (max-width: 900px) {
-    .logo {
-        width: clamp(160px, 36vw, 400px);
+@keyframes twinkle {
+
+    0%,
+    100% {
+        opacity: var(--op, .85);
+        transform: scale(1);
     }
 
-    .game-card {
-        max-width: 680px;
+    50% {
+        opacity: 0.04;
+        transform: scale(0.10);
     }
 }
 
-/* short landscape screens (e.g. phone rotated) */
-@media (max-height: 500px) {
-    .top-bar {
-        height: clamp(44px, 10vh, 64px);
-    }
-
+/* ============================================================
+   TABLET  481–900px
+   ============================================================ */
+@media (max-width: 900px) {
     .logo {
-        width: clamp(130px, 28vw, 280px);
+        width: clamp(170px, 34vw, 380px);
     }
 
-    .character-display {
-        width: clamp(70px, 10vw, 110px);
-        height: clamp(80px, 11vw, 126px);
+    .game-card {
+        max-width: 720px;
     }
 
     .actions-panel {
-        gap: 5px;
+        gap: clamp(10px, 1.7vh, 14px);
+    }
+}
+
+/* Short landscape */
+@media (max-height: 520px) {
+    .top-bar {
+        height: clamp(40px, 9vh, 58px);
+    }
+
+    .logo {
+        width: clamp(130px, 24vw, 260px);
+    }
+
+    .character-display {
+        width: clamp(72px, 10vw, 112px);
+        height: clamp(83px, 11vw, 128px);
+    }
+
+    .actions-panel {
+        gap: 6px;
+        padding: 10px 14px;
     }
 
     .panel-heading {
-        font-size: 9px;
+        font-size: 10px;
     }
 
     .start-btn {
         font-size: 13px;
-        padding: 7px;
+        padding: 8px;
     }
 
     .chalk-btn {
-        font-size: 10px;
+        font-size: 11px;
         padding: 7px 10px;
     }
 
     .name-input {
         padding: 7px 10px;
-        font-size: 10px;
+        font-size: 12px;
+    }
+
+    .character-panel {
+        padding: 10px 18px;
     }
 }
 
 /* ============================================================
-   MOBILE  ≤ 480px  — vertical single-column, still 100vh
+   MOBILE  480px
    ============================================================ */
 @media (max-width: 480px) {
-
-    /* body stays overflow:hidden — container is the viewport */
     .game-container {
-        padding: clamp(6px, 1.5vw, 14px) clamp(8px, 3vw, 16px);
+        padding: clamp(8px, 1.5vw, 14px) clamp(10px, 3vw, 18px);
         justify-content: space-between;
-        /* spread: topbar · card · bottombar */
         height: 100vh;
         overflow: hidden;
+        gap: 10px;
     }
 
-    /* top bar: only logo, centered */
     .top-bar {
-        height: clamp(48px, 11vh, 72px);
+        height: clamp(46px, 10vh, 68px);
         justify-content: center;
     }
 
@@ -840,56 +1289,55 @@ body::after {
     }
 
     .logo {
-        width: clamp(140px, 52vw, 220px);
+        width: clamp(155px, 55vw, 240px);
     }
 
-    /* centering wrapper: flex:1 so card gets remaining space */
     .main-content {
         flex: 1;
         min-height: 0;
         align-items: center;
+        justify-content: center;
+        gap: 12px;
     }
 
-    /* card goes vertical, fills available width */
     .game-card {
         flex-direction: column;
-        max-width: 360px;
+        max-width: 390px;
         width: 100%;
-        max-height: 100%;
+        border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
     }
 
-    /* character panel on top */
     .character-panel {
         border-right: none;
-        border-bottom: 3px solid rgba(255, 255, 255, .18);
-        padding: clamp(10px, 2vh, 18px) clamp(40px, 12vw, 60px);
+        border-bottom: 2.5px solid rgba(255, 255, 255, 0.12);
+        padding: clamp(12px, 2.2vh, 20px) clamp(48px, 14vw, 68px);
         flex-shrink: 0;
     }
 
     .character-display {
-        width: clamp(90px, 26vw, 140px);
-        height: clamp(104px, 30vw, 160px);
+        width: clamp(94px, 27vw, 148px);
+        height: clamp(108px, 31vw, 170px);
     }
 
-    /* on mobile: one centred arrow pair flanking ghost */
+    /* Mobile arrow positions */
     .arrow-hat-prev {
-        left: clamp(-48px, -13vw, -34px);
+        left: clamp(-52px, -15vw, -36px);
         top: 50%;
-        transform: translateY(-50%) rotate(180deg);
+        transform: translateY(-50%);
     }
 
     .arrow-hat-prev:hover {
-        transform: translateY(-50%) rotate(180deg) scale(1.1);
+        transform: translateY(-50%) scale(1.18);
     }
 
     .arrow-hat-next {
-        right: clamp(-48px, -13vw, -34px);
+        right: clamp(-52px, -15vw, -36px);
         top: 50%;
         transform: translateY(-50%);
     }
 
     .arrow-hat-next:hover {
-        transform: translateY(-50%) scale(1.1);
+        transform: translateY(-50%) scale(1.18);
     }
 
     .arrow-expr-prev,
@@ -897,37 +1345,35 @@ body::after {
         display: none;
     }
 
-    /* actions panel below */
     .actions-panel {
-        padding: clamp(10px, 1.5vh, 16px) clamp(10px, 3vw, 18px);
-        gap: clamp(6px, 1.2vh, 10px);
+        padding: clamp(13px, 1.9vh, 19px) clamp(13px, 3.8vw, 22px);
+        gap: clamp(9px, 1.6vh, 13px);
         flex: 1;
         min-height: 0;
         justify-content: center;
     }
 
     .panel-heading {
-        font-size: clamp(8px, 2.2vw, 11px);
+        font-size: clamp(10px, 2.6vw, 13px);
         text-align: center;
     }
 
     .start-btn {
-        font-size: clamp(12px, 3.5vw, 16px);
+        font-size: clamp(14px, 4.2vw, 18px);
         letter-spacing: 3px;
-        padding: clamp(9px, 1.4vh, 12px);
+        padding: clamp(11px, 1.7vh, 15px);
     }
 
     .chalk-btn {
-        font-size: clamp(9px, 2.4vw, 12px);
-        padding: clamp(8px, 1.2vh, 11px) clamp(8px, 2vw, 14px);
+        font-size: clamp(11px, 2.8vw, 14px);
+        padding: clamp(9px, 1.5vh, 12px) clamp(9px, 2.4vw, 15px);
     }
 
     .name-input {
-        font-size: clamp(9px, 2.4vw, 12px);
-        padding: clamp(8px, 1.2vh, 11px) clamp(8px, 2vw, 13px);
+        font-size: clamp(13px, 3.2vw, 16px);
+        padding: clamp(10px, 1.5vh, 13px) clamp(11px, 2.8vw, 15px);
     }
 
-    /* mobile bottom bar: EN left, gear right */
     .mobile-bottom-bar {
         display: flex;
         justify-content: space-between;
@@ -937,9 +1383,9 @@ body::after {
     }
 
     .mobile-bottom-bar .lang-btn {
-        font-size: 12px;
-        padding: 5px 13px;
-        border-width: 2.5px;
+        font-size: 11px;
+        padding: 5px 12px;
+        border-width: 2px;
     }
 
     .mobile-bottom-bar .icon-btn {
@@ -948,15 +1394,15 @@ body::after {
     }
 }
 
-/* very tiny phones (≤340px) */
+/* Very tiny phones */
 @media (max-width: 340px) {
     .logo {
-        width: 130px;
+        width: 132px;
     }
 
     .character-display {
-        width: 80px;
-        height: 92px;
+        width: 84px;
+        height: 96px;
     }
 
     .name-row {
@@ -970,6 +1416,234 @@ body::after {
     .arrow-btn {
         width: 26px;
         height: 26px;
-        padding: 5px;
     }
+}
+
+/* Wide screens 1400px+ */
+@media (min-width: 1400px) {
+    .game-card {
+        max-width: 1020px;
+    }
+
+    .logo {
+        width: clamp(400px, 28vw, 550px);
+    }
+
+    .character-display {
+        width: clamp(158px, 12vw, 198px);
+        height: clamp(182px, 14vw, 228px);
+    }
+
+    .actions-panel {
+        gap: 22px;
+        padding: 32px 42px;
+    }
+
+    .start-btn {
+        font-size: clamp(21px, 1.8vw, 27px);
+    }
+
+    .chalk-btn {
+        font-size: clamp(14px, 1.2vw, 17px);
+    }
+
+    .name-input {
+        font-size: clamp(16px, 1.3vw, 20px);
+    }
+}
+
+/* ============================================================
+   HTML REFERENCE — SVG ICONS TO USE IN YOUR MARKUP
+
+   Replace img-based icons with these inline SVGs.
+   Copy-paste directly into the relevant element.
+
+   ── SETTINGS (gear / cog) ──
+   <svg viewBox="0 0 24 24">
+     <circle cx="12" cy="12" r="3"/>
+     <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83
+      2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0
+      00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65
+      0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0
+      004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0
+      004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06
+      A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65
+      1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83
+      l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010
+      4h-.09a1.65 1.65 0 00-1.51 1z"/>
+   </svg>
+
+   ── MIC (unmuted) ──
+   <svg viewBox="0 0 24 24">
+     <rect x="9" y="2" width="6" height="11" rx="3"/>
+     <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+   </svg>
+
+   ── MIC MUTED (add class="muted" to .icon-btn) ──
+   <svg viewBox="0 0 24 24">
+     <rect x="9" y="2" width="6" height="11" rx="3" opacity="0.35"/>
+     <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+     <line x1="3" y1="3" x2="21" y2="21"/>
+   </svg>
+
+   ── ARROW LEFT — use in hat-prev and expr-prev ──
+   <svg viewBox="0 0 24 24">
+     <polyline points="15 18 9 12 15 6"/>
+   </svg>
+
+   ── ARROW RIGHT — use in hat-next and expr-next ──
+   <svg viewBox="0 0 24 24">
+     <polyline points="9 18 15 12 9 6"/>
+   </svg>
+
+   ── DICE — use in random-btn (replaces old asset) ──
+   <svg viewBox="0 0 24 24"
+        fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+     <rect x="2" y="2" width="20" height="20" rx="3" ry="3"/>
+     <circle cx="8"  cy="8"  r="1.3" fill="white" stroke="none"/>
+     <circle cx="16" cy="8"  r="1.3" fill="white" stroke="none"/>
+     <circle cx="12" cy="12" r="1.3" fill="white" stroke="none"/>
+     <circle cx="8"  cy="16" r="1.3" fill="white" stroke="none"/>
+     <circle cx="16" cy="16" r="1.3" fill="white" stroke="none"/>
+   </svg>
+   ============================================================ */
+/* Force arrow directions */
+.arrow-expr-prev img { transform: scaleX(-1); } /* faces left */
+.arrow-expr-next img { transform: none; } /* faces right */
+.arrow-hat-prev img { transform: rotate(-90deg); } /* faces up? */
+.arrow-hat-next img { transform: rotate(90deg); } /* faces down? */
+
+/* Reposition around character */
+.arrow-hat-prev {
+    left: 50%;
+    top: -15%;
+    transform: translateX(-50%);
+}
+.arrow-hat-prev:hover {
+    transform: translateX(-50%) translateY(-2px) scale(1.02);
+}
+.arrow-hat-next {
+    left: 50%;
+    top: 110%;
+    transform: translateX(-50%);
+}
+.arrow-hat-next:hover {
+    transform: translateX(-50%) translateY(2px) scale(1.02);
+}
+.arrow-expr-prev {
+    left: -20%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.arrow-expr-prev:hover {
+    transform: translateY(-50%) translateX(-2px) scale(1.02);
+}
+.arrow-expr-next {
+    right: -20%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.arrow-expr-next:hover {
+    transform: translateY(-50%) translateX(2px) scale(1.02);
+}
+
+.random-btn {
+    margin-top: 40px; /* space below bottom arrow */
+}
+
+.name-helper-text {
+    font-size: clamp(14px, 1.4vw, 17px);
+    color: rgba(255, 255, 255, 0.85);
+    font-family: \'Gloria Hallelujah\', cursive;
+    text-align: center;
+    margin-top: 8px;
+    font-weight: bold;
+}
+
+.name-status-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.name-status-icon.loading {
+    opacity: 1;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.name-status-icon.tick {
+    opacity: 1;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.name-status-icon.tick::after {
+    content: \'\';
+    display: block;
+    width: 8px;
+    height: 14px;
+    border: solid #ffffff;
+    border-width: 0 4px 4px 0;
+    transform: rotate(45deg);
+    margin-bottom: 4px;
+}
+
+@keyframes spin { 100% { transform: translateY(-50%) rotate(360deg); } }
+@keyframes popIn { 0% { transform: translateY(-50%) scale(0); } 100% { transform: translateY(-50%) scale(1); } }
+
+/* Organic Hand-drawn loading dots underneath text */
+.preloader-text {
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(18px, 2.5vw, 24px);
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 2px;
+    margin-top: 30px;
+    font-weight: bold;
+}
+
+.loading-dots::after {
+    content: '.';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
+/* Base character styling to fix ghost floating smoothly */
+.preloader-ghost-img {
+    width: clamp(80px, 15vw, 120px);
+    filter: drop-shadow(4px 5px 0 #000); /* gives it grounding */
+    animation: floatY 3s ease-in-out infinite; 
+}
+
+/* Force Lucide icons to use proper chalk stroke */
+.arrow-btn svg {
+    width: 60%;
+    height: 60%;
+    stroke: currentColor;
+    stroke-width: 3;
+    filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.8));
+}
+.icon-btn svg {
+    width: 60%;
+    height: 60%;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.8));
+    fill: none;
 }

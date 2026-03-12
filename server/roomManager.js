@@ -1,29 +1,36 @@
+/**
+ * RoomManager — In-memory room storage, CRUD, and state helpers.
+ * 
+ * Rooms Map is exported for iteration (disconnect handling).
+ * All mutation goes through exported functions.
+ */
+const { getDefaultSettings } = require('./utils/settingsValidator');
+const { PHASE } = require('./constants/events');
+
 const rooms = new Map();
 
-function createRoom(roomCode, hostId) {
-    const defaultSettings = {
-        maxPlayers: 6,
-        turnDuration: 5,
-        brushSize: 3,
-        inkLimit: 50,
-        voteTime: 30,
-        language: "EN",
-        mode: "Final Verdict",
-        slowMoReplay: false,
-        numberOfImposters: 1,
-        allowVoiceChat: false,
-        anonymousVote: false,
-        customWordsEnabled: false,
-        customWords: []
-    };
+// ─── Socket → Room mapping for fast lookup on disconnect ───
+const socketToRoom = new Map();  // socketId → roomCode
 
+// ─── Player Session Tokens for reconnect ───
+// sessionToken → { roomCode, playerId, socketId, disconnectedAt }
+const disconnectedSessions = new Map();
+
+// ────────────────────────────────────────────────────────
+// Room CRUD
+// ────────────────────────────────────────────────────────
+
+function createRoom(roomCode, hostSocketId) {
     const room = {
         roomCode,
-        hostId,
-        phase: "lobby",
-        players: [], // Array of player objects
-        settings: defaultSettings,
-        chat: []
+        hostId: hostSocketId,
+        phase: PHASE.LOBBY,
+        players: [],
+        settings: getDefaultSettings(),
+        chat: [],
+        gameState: null,
+        createdAt: Date.now(),
+        lastActivity: Date.now(),
     };
 
     rooms.set(roomCode, room);
@@ -31,100 +38,269 @@ function createRoom(roomCode, hostId) {
 }
 
 function getRoom(roomCode) {
-    return rooms.get(roomCode);
+    return rooms.get(roomCode) || null;
 }
 
-function removeRoom(roomCode) {
+function deleteRoom(roomCode) {
     rooms.delete(roomCode);
 }
 
-function joinRoom(roomCode, player) {
+function getAllRoomCodes() {
+    return Array.from(rooms.keys());
+}
+
+// ────────────────────────────────────────────────────────
+// Player Management
+// ────────────────────────────────────────────────────────
+
+function addPlayer(roomCode, player) {
     const room = getRoom(roomCode);
-    if (!room) return null;
-    
-    // Check max players
+    if (!room) return { error: 'ROOM_NOT_FOUND' };
+
     if (room.players.length >= room.settings.maxPlayers) {
-        return { error: "Room is full" };
+        return { error: 'ROOM_FULL' };
     }
 
-    // Check if player is already in room
-    const existingPlayerIndex = room.players.findIndex(p => p.id === player.id);
-    if (existingPlayerIndex !== -1) {
-        room.players[existingPlayerIndex] = player; // Update player details
+    if (room.phase !== PHASE.LOBBY) {
+        // Allow reconnecting players during game, but not new joins
+        const existing = room.players.find(p => p.sessionToken === player.sessionToken);
+        if (!existing) {
+            return { error: 'ROOM_IN_GAME' };
+        }
+    }
+
+    // Check if player already exists (by sessionToken for reconnect, or socketId)
+    const existIdx = room.players.findIndex(
+        p => p.sessionToken === player.sessionToken || p.id === player.id
+    );
+
+    if (existIdx !== -1) {
+        // Reconnecting — update socket id while preserving game data
+        const old = room.players[existIdx];
+        room.players[existIdx] = {
+            ...old,
+            id: player.id,               // new socket id
+            isConnected: true,
+            lastSeenAt: Date.now(),
+            name: player.name || old.name,
+            avatar: player.avatar || old.avatar,
+        };
     } else {
-        room.players.push(player); // Add new player
+        room.players.push(player);
     }
 
-    return room;
+    room.lastActivity = Date.now();
+    socketToRoom.set(player.id, roomCode);
+
+    return { room };
 }
 
-function removePlayerFromRoom(roomCode, playerId) {
+function removePlayer(roomCode, socketId) {
+    const room = getRoom(roomCode);
+    if (!room) return { action: 'noop' };
+
+    const playerIdx = room.players.findIndex(p => p.id === socketId);
+    if (playerIdx === -1) return { action: 'noop' };
+
+    const removed = room.players[playerIdx];
+    room.players.splice(playerIdx, 1);
+    socketToRoom.delete(socketId);
+
+    if (room.players.length === 0) {
+        deleteRoom(roomCode);
+        return { action: 'destroyed', room: null, player: removed };
+    }
+
+    // Host migration
+    if (room.hostId === socketId) {
+        const nextHost = room.players.find(p => p.isConnected);
+        if (nextHost) {
+            room.hostId = nextHost.id;
+            nextHost.isHost = true;
+            // Unset old isHost on everyone else
+            room.players.forEach(p => {
+                if (p.id !== nextHost.id) p.isHost = false;
+            });
+        }
+    }
+
+    room.lastActivity = Date.now();
+    return { action: 'updated', room, player: removed };
+}
+
+function markDisconnected(roomCode, socketId) {
     const room = getRoom(roomCode);
     if (!room) return null;
 
-    room.players = room.players.filter(p => p.id !== playerId);
-    
-    // If no players left, destroy room
-    if (room.players.length === 0) {
-        removeRoom(roomCode);
-        return { action: 'destroyed', room: null };
+    const player = room.players.find(p => p.id === socketId);
+    if (!player) return null;
+
+    player.isConnected = false;
+    player.lastSeenAt = Date.now();
+
+    // Store session for reconnect
+    if (player.sessionToken) {
+        disconnectedSessions.set(player.sessionToken, {
+            roomCode,
+            playerId: player.id,
+            socketId,
+            disconnectedAt: Date.now(),
+        });
     }
 
-    // If host left, assign new host
-    if (room.hostId === playerId) {
-        room.hostId = room.players[0].id;
-        room.players[0].isHost = true;
+    socketToRoom.delete(socketId);
+
+    // Host migration if host disconnects
+    if (room.hostId === socketId) {
+        const nextHost = room.players.find(p => p.isConnected && p.id !== socketId);
+        if (nextHost) {
+            room.hostId = nextHost.id;
+            nextHost.isHost = true;
+            room.players.forEach(p => {
+                if (p.id !== nextHost.id) p.isHost = false;
+            });
+        }
     }
 
-    return { action: 'updated', room };
+    // If all disconnected, start cleanup timer
+    const activePlayers = room.players.filter(p => p.isConnected).length;
+    if (activePlayers === 0) {
+        // Give 60s grace period then destroy
+        setTimeout(() => {
+            const r = getRoom(roomCode);
+            if (r && r.players.filter(p => p.isConnected).length === 0) {
+                deleteRoom(roomCode);
+            }
+        }, 60000);
+    }
+
+    room.lastActivity = Date.now();
+    return { room, player };
 }
+
+// ────────────────────────────────────────────────────────
+// Settings
+// ────────────────────────────────────────────────────────
 
 function updateSettings(roomCode, newSettings) {
     const room = getRoom(roomCode);
     if (!room) return null;
 
-    room.settings = { ...room.settings, ...newSettings };
+    room.settings = newSettings;
+    room.lastActivity = Date.now();
     return room;
 }
 
-function addCustomWord(roomCode, word) {
+// ────────────────────────────────────────────────────────
+// Chat
+// ────────────────────────────────────────────────────────
+
+const MAX_CHAT_HISTORY = 100;
+
+function addChatMessage(roomCode, msgObj) {
     const room = getRoom(roomCode);
     if (!room) return null;
 
-    if (!room.settings.customWords.includes(word)) {
-        room.settings.customWords.push(word);
-    }
-    return room;
-}
-
-function removeCustomWord(roomCode, word) {
-    const room = getRoom(roomCode);
-    if (!room) return null;
-
-    room.settings.customWords = room.settings.customWords.filter(w => w !== word);
-    return room;
-}
-
-function addChatMessage(roomCode, messageObj) {
-    const room = getRoom(roomCode);
-    if (!room) return null;
-
-    room.chat.push(messageObj);
-    // Keep max 100 messages to prevent memory issues
-    if(room.chat.length > 100) {
+    room.chat.push(msgObj);
+    if (room.chat.length > MAX_CHAT_HISTORY) {
         room.chat.shift();
     }
     return room;
 }
 
+// ────────────────────────────────────────────────────────
+// State Broadcasting Helpers
+// ────────────────────────────────────────────────────────
+
+/**
+ * Build public room state — strips private data.
+ * Never includes roles, prompt, custom words, or game internals.
+ */
+function getPublicRoomState(room) {
+    if (!room) return null;
+
+    const publicPlayers = room.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar,
+        isHost: p.isHost,
+        isConnected: p.isConnected,
+    }));
+
+    const publicSettings = { ...room.settings };
+    // Never expose custom words list to non-hosts
+    delete publicSettings.customWords;
+
+    const publicGameState = room.gameState ? {
+        currentTurnIndex: room.gameState.currentTurnIndex,
+        turnOrder: room.gameState.turnOrder,
+        currentRound: room.gameState.currentRound,
+        totalRounds: room.gameState.totalRounds,
+        wrongVotes: room.gameState.wrongVotes,
+        inkLeft: room.gameState.inkLeft,
+        // Do NOT include: roles, prompt, votes (unless anonymous is off and phase allows)
+    } : null;
+
+    return {
+        roomCode: room.roomCode,
+        hostId: room.hostId,
+        phase: room.phase,
+        players: publicPlayers,
+        settings: publicSettings,
+        gameState: publicGameState,
+    };
+}
+
+/**
+ * Build host-only state — includes custom words.
+ */
+function getHostState(room) {
+    if (!room) return null;
+    return {
+        customWords: room.settings.customWords || [],
+    };
+}
+
+// ────────────────────────────────────────────────────────
+// Socket Mapping Helpers
+// ────────────────────────────────────────────────────────
+
+function getRoomForSocket(socketId) {
+    return socketToRoom.get(socketId) || null;
+}
+
+function setSocketRoom(socketId, roomCode) {
+    socketToRoom.set(socketId, roomCode);
+}
+
+function clearSocketRoom(socketId) {
+    socketToRoom.delete(socketId);
+}
+
+function getDisconnectedSession(sessionToken) {
+    return disconnectedSessions.get(sessionToken) || null;
+}
+
+function clearDisconnectedSession(sessionToken) {
+    disconnectedSessions.delete(sessionToken);
+}
+
 module.exports = {
+    rooms,
     createRoom,
     getRoom,
-    removeRoom,
-    joinRoom,
-    removePlayerFromRoom,
+    deleteRoom,
+    getAllRoomCodes,
+    addPlayer,
+    removePlayer,
+    markDisconnected,
     updateSettings,
-    addCustomWord,
-    removeCustomWord,
-    addChatMessage
+    addChatMessage,
+    getPublicRoomState,
+    getHostState,
+    getRoomForSocket,
+    setSocketRoom,
+    clearSocketRoom,
+    getDisconnectedSession,
+    clearDisconnectedSession,
 };

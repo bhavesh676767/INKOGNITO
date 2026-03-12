@@ -3,6 +3,16 @@
    Character selection, name input, menu actions, sound FX
    ============================================================ */
 
+// Attach a simple frontend-only state machine instance for the entry page.
+// The authoritative game state should live on the server, but this gives us
+// a single, predictable client state for UI flows.
+const EntryPhases = window.InkognitoStateMachine
+  ? window.InkognitoStateMachine.PHASES
+  : { LOBBY: 'Lobby' };
+const entryStateMachine = window.InkognitoStateMachine
+  ? new window.InkognitoStateMachine.GameStateMachine(EntryPhases.LOBBY)
+  : null;
+
 class CharacterSelector {
     constructor() {
         /* ---- Asset lists (match filenames in /assets/characters/) ---- */
@@ -50,42 +60,58 @@ class CharacterSelector {
         this.avatarEl = document.getElementById('avatar');
         this.nameInputEl = document.getElementById('nameInput');
         this.soundIconEl = document.getElementById('soundIcon');
+        this.startGameBtn = document.getElementById('startGameBtn');
         
         // Invite elements
         this.inviteNotification = document.getElementById('inviteNotification');
         this.inviteRoomCodeEl = document.getElementById('inviteRoomCode');
         this.createPartyBtn = document.getElementById('createPartyBtn');
         this.joinBtn = document.getElementById('joinBtn');
+        this.nameStatusIcon = document.getElementById('nameStatusIcon');
+        this.typingTimeout = null;
     }
 
     bindEvents() {
         /* Navigation */
-        document.getElementById('hatPrev').addEventListener('click', () => this.prevHat());
-        document.getElementById('hatNext').addEventListener('click', () => this.nextHat());
-        document.getElementById('exprPrev').addEventListener('click', () => this.prevExpr());
-        document.getElementById('exprNext').addEventListener('click', () => this.nextExpr());
+        const hatPrev = document.getElementById('hatPrev');
+        const hatNext = document.getElementById('hatNext');
+        const exprPrev = document.getElementById('exprPrev');
+        const exprNext = document.getElementById('exprNext');
+        if (hatPrev) hatPrev.addEventListener('click', () => this.prevHat());
+        if (hatNext) hatNext.addEventListener('click', () => this.nextHat());
+        if (exprPrev) exprPrev.addEventListener('click', () => this.prevExpr());
+        if (exprNext) exprNext.addEventListener('click', () => this.nextExpr());
 
         /* Random */
-        document.getElementById('randomBtn').addEventListener('click', () => this.randomize());
+        const randomBtn = document.getElementById('randomBtn');
+        if (randomBtn) randomBtn.addEventListener('click', () => this.randomize());
 
-        /* Name submit */
-        document.getElementById('submitBtn').addEventListener('click', () => this.submitName());
-        this.nameInputEl.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.submitName();
-        });
+        /* Name input auto-confirm */
+        if (this.nameInputEl) {
+            this.nameInputEl.addEventListener('input', () => this.handleNameInput());
+        }
 
         /* Menu */
-        document.getElementById('startGameBtn').addEventListener('click', () => this.startGame());
-        this.createPartyBtn.addEventListener('click', () => this.createParty());
-        this.joinBtn.addEventListener('click', () => this.joinParty());
+        if (this.startGameBtn) {
+            this.startGameBtn.addEventListener('click', () => this.startGame());
+        }
+        if (this.createPartyBtn) {
+            this.createPartyBtn.addEventListener('click', () => this.createParty());
+        }
+        if (this.joinBtn) {
+            this.joinBtn.addEventListener('click', () => this.joinParty());
+        }
         
         const leavePartyBtn = document.getElementById('leavePartyBtn');
         if(leavePartyBtn) leavePartyBtn.addEventListener('click', () => this.leaveParty());
 
         /* Top bar */
-        document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
-        document.getElementById('soundBtn').addEventListener('click', () => this.toggleSound());
-        document.getElementById('langBtn').addEventListener('click', () => this.cycleLang());
+        const settingsBtn = document.getElementById('settingsBtn');
+        const soundBtn = document.getElementById('soundBtn');
+        const langBtn = document.getElementById('langBtn');
+        if (settingsBtn) settingsBtn.addEventListener('click', () => this.openSettings());
+        if (soundBtn) soundBtn.addEventListener('click', () => this.toggleSound());
+        if (langBtn) langBtn.addEventListener('click', () => this.cycleLang());
     }
 
     /* ================================================================
@@ -149,28 +175,33 @@ class CharacterSelector {
     /* ================================================================
        NAME & ACTIONS
        ================================================================ */
-    submitName() {
+    handleNameInput() {
         const name = this.nameInputEl.value.trim();
+        this.nameStatusIcon.className = ''; // remove tick/loading
+        
+        if (this.typingTimeout) clearTimeout(this.typingTimeout);
+        this.playerData = null; // invalidates previous confirmed name if editing
+        
+        if (name.length < 2) return;
+        
+        // Show loading
+        this.nameStatusIcon.className = 'name-status-icon loading';
+        
+        this.typingTimeout = setTimeout(() => {
+            this.confirmName(name);
+        }, 1000);
+    }
 
-        if (name.length < 2) {
-            this.toast('Name must be at least 2 characters!');
-            this.playSound('error');
-            return;
-        }
-
+    confirmName(name) {
         this.playerData = {
             name,
             hat: this.hats[this.currentHatIndex],
             expression: this.expressions[this.currentExpressionIndex]
         };
-
+        
+        this.nameStatusIcon.className = 'name-status-icon tick';
         this.toast(`Welcome, ${name}!`);
         this.playSound('success');
-
-        /* Visual confirmation */
-        this.nameInputEl.disabled = true;
-        document.getElementById('submitBtn').disabled = true;
-        document.getElementById('submitBtn').style.opacity = '0.5';
     }
 
     startGame() {
@@ -178,6 +209,19 @@ class CharacterSelector {
             this.toast('Please enter your name first!');
             this.playSound('error');
             return;
+        }
+        if (entryStateMachine) {
+            try {
+                if (entryStateMachine.phase !== EntryPhases.LOBBY) {
+                    this.toast('Game is not in a startable state.');
+                    return;
+                }
+                entryStateMachine.transitionTo(EntryPhases.GAME_STARTING);
+            } catch (e) {
+                console.error('[INKOGNITO] Invalid state transition on startGame:', e);
+                this.toast('Unable to start game right now.');
+                return;
+            }
         }
         this.playSound('start');
         this.toast('Starting game...');
@@ -195,12 +239,12 @@ class CharacterSelector {
         
         // If there is an invite room, join it instead of redirecting nowhere
         if (this.inviteRoomCode) {
+            this.toast(`Joining room ${this.inviteRoomCode}...`);
             setTimeout(() => {
                 window.location.href = `/pregame-lobby/pregame-lobby.html?room=${this.inviteRoomCode}`;
             }, 500);
         } else {
-            console.log('Starting game locally (no room code context). (Feature pending)');
-            this.toast("Wait! Please 'Create Party' or 'Join' to play multiplayer.");
+            this.toast("Please 'Create Party' or 'Join' to play multiplayer.");
         }
     }
 
@@ -276,10 +320,15 @@ class CharacterSelector {
             }
             if (this.joinBtn) {
                 this.joinBtn.disabled = true;
-                this.joinBtn.style.opacity = '0.5';
+                this.joinBtn.style.opacity = '0.3';
                 this.joinBtn.style.cursor = 'not-allowed';
             }
             
+            // Change Start button text
+            if (this.startGameBtn) {
+                this.startGameBtn.textContent = 'JOIN LOBBY';
+            }
+
             this.toast('Join party detected!');
             this.playSound('nav');
         }

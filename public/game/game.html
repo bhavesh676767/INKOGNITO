@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>INKOGNITO — Game</title>
+    <link rel="stylesheet" href="game.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Black+Han+Sans&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-ghost">
+            <img src="/assets/characters/base_character.png" alt="Loading…" class="preloader-ghost-img">
+        </div>
+        <p class="preloader-text">Preparing chaos<span class="loading-dots"></span></p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- CINEMATIC START SEQUENCE -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="phase-overlay cinematic-overlay" id="cinematicOverlay" style="display:none;">
+        <div class="bg-texture"></div>
+        
+        <!-- Countdown -->
+        <div class="cinematic-step" id="cinematicCountdown" style="display:none;">
+            <div class="countdown-number" id="countdownNumber">3</div>
+        </div>
+
+        <!-- Role Reveal -->
+        <div class="cinematic-step" id="cinematicRole" style="display:none;">
+            <h1 class="role-title" id="roleTitle">Crew</h1>
+            <p class="role-desc" id="roleDesc">Draw the word and find the fake.</p>
+            <div class="role-teammates" id="roleTeammates" style="display:none;"></div>
+        </div>
+
+        <!-- Word Reveal -->
+        <div class="cinematic-step" id="cinematicWord" style="display:none;">
+            <p class="word-pre-text" id="wordPreText">The word is:</p>
+            <h2 class="word-reveal-text" id="wordRevealText">???</h2>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- DRAWING PHASE -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="game-container" id="gameContainer" style="display:none;">
+        <div class="bg-texture"></div>
+
+        <!-- LEFT PANEL -->
+        <aside class="left-panel">
+            <div class="logo-area">
+                <img src="/assets/logo/frame1.png" alt="INKOGNITO" class="logo">
+                <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+            </div>
+            
+            <div class="player-list-container">
+                <div class="player-list" id="playerList"></div>
+            </div>
+        </aside>
+
+        <!-- CENTER PANEL -->
+        <main class="center-panel">
+            <div class="canvas-header">
+                <div class="timer" id="turnTimer">--s</div>
+                <div class="prompt-box" id="promptDisplay">???</div>
+                <div class="drawer-text" id="drawerText">Waiting...</div>
+            </div>
+
+            <div class="canvas-wrapper">
+                <div class="ink-meter-container">
+                    <div class="ink-meter-fill" id="inkFill"></div>
+                </div>
+                <canvas id="drawingCanvas" width="800" height="600" class="disabled"></canvas>
+            </div>
+
+            <div class="toolbar">
+                <div class="color-palette" id="colorPalette">
+                    <button class="color-btn" data-color="#ff4444" style="background: #ff4444;"></button>
+                    <button class="color-btn" data-color="#ffee44" style="background: #ffee44;"></button>
+                    <button class="color-btn" data-color="#44ff44" style="background: #44ff44;"></button>
+                    <button class="color-btn" data-color="#44ffff" style="background: #44ffff;"></button>
+                    <button class="color-btn" data-color="#4488ff" style="background: #4488ff;"></button>
+                    <button class="color-btn" data-color="#8844ff" style="background: #8844ff;"></button>
+                    <button class="color-btn" data-color="#ff44ee" style="background: #ff44ee;"></button>
+                    <button class="color-btn" data-color="#ff8844" style="background: #ff8844;"></button>
+                    <button class="color-btn" data-color="#000000" style="background: #000000;"></button>
+                    <button class="color-btn active" data-color="#ffffff" style="background: #ffffff;"></button>
+                </div>
+                <div class="tool-icons">
+                    <button class="tool-btn" id="fillToolBtn" title="Fill Bucket">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8"/><path d="M18 7h1v4"/><path d="M14 3h-4v4h4z"/><path d="M10 7H6v4h4z"/><path d="M5 11l7 7 7-7"/></svg>
+                    </button>
+                    <button class="tool-btn active" id="brushToolBtn" title="Brush">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.17 2.83a4.2 4.2 0 1 0-5.94 5.94L6 18H2v-4l9.23-9.23a4.2 4.2 0 1 0 5.94-5.94H21.17z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL -->
+        <aside class="right-panel">
+            <div class="voice-controls">
+                <button class="icon-btn" id="speakerBtn" title="Toggle Sound">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+                <button class="icon-btn muted" title="Video (Disabled)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+                <button class="icon-btn muted" id="micBtn" title="Toggle Microphone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22"/><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+            </div>
+
+            <div class="chat-wrapper">
+                <div class="chat-header">chat</div>
+                <div class="chat-messages" id="chatMessages"></div>
+                <form class="chat-input-form" id="chatForm">
+                    <input type="text" id="chatInput" placeholder="type to chat" autocomplete="off" maxlength="120">
+                    <button type="submit" class="send-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </form>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- VOTING PHASE OVERLAY -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="phase-overlay" id="votingOverlay" style="display:none;">
+        <div class="bg-texture"></div>
+        <div class="vote-screen">
+            <h1 class="vote-title">Vote the Impostor</h1>
+            <p class="vote-subtitle" id="voteSubtitle">Who do you think is faking it?</p>
+
+            <div class="vote-timer-row">
+                <div class="vote-timer" id="voteTimer">30s</div>
+                <div class="vote-progress" id="voteProgress"></div>
+            </div>
+
+            <div class="vote-cards" id="voteCards"></div>
+
+            <button class="vote-confirm-btn" id="voteConfirmBtn" disabled>
+                <span class="confirm-text">Lock in your vote</span>
+                <svg class="confirm-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- VOTE RESULT REVEAL -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="phase-overlay" id="voteResultOverlay" style="display:none;">
+        <div class="bg-texture"></div>
+        <div class="vote-result-screen">
+            <div class="result-avatar-ring" id="resultAvatarRing">
+                <div class="result-avatar" id="resultAvatar"></div>
+            </div>
+            <h2 class="result-voted-name" id="resultVotedName"></h2>
+            <p class="result-voted-role" id="resultVotedRole"></p>
+            <p class="result-reaction" id="resultReaction"></p>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- WINNER RESULT SCREEN -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="phase-overlay" id="winnerOverlay" style="display:none;">
+        <div class="bg-texture"></div>
+        <div class="winner-screen">
+            <h1 class="winner-headline" id="winnerHeadline"></h1>
+            <p class="winner-reason" id="winnerReason"></p>
+
+            <div class="winner-reveal-box">
+                <p class="reveal-label">The word was</p>
+                <h2 class="reveal-word" id="revealWord"></h2>
+            </div>
+
+            <div class="winner-roles" id="winnerRoles"></div>
+
+            <div class="winner-actions" id="winnerActions">
+                <button class="chalk-btn primary" id="playAgainBtn">Play Again</button>
+                <button class="chalk-btn secondary" id="backToLobbyBtn">Back to Lobby</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sockets Client -->
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="../shared/socket-client.js"></script>
+    <script src="../shared/config.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

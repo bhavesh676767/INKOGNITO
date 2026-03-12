@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>INKOGNITO</title>
+    <meta name="description" content="INKOGNITO — Choose your character and start playing.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Black+Han+Sans&display=swap"
+        rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-qTLgeVO5.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Cd4hj94A.css">
+</head>
+
+<canvas id="starCanvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+
+<script>
+(function () {
+  const canvas = document.getElementById('starCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  const STAR_COUNT = 340;
+  const stars = [];
+  const shootingStars = [];
+
+  function initStars() {
+    stars.length = 0;
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.8 + 0.3,
+        alpha: Math.random() * 0.7 + 0.3,
+        twinkleSpeed: Math.random() * 0.02 + 0.005,
+        twinkleOffset: Math.random() * Math.PI * 2,
+        color: Math.random() < 0.15
+          ? `hsl(${200 + Math.random() * 60},80%,92%)`
+          : Math.random() < 0.07
+            ? `hsl(${30 + Math.random() * 30},90%,92%)`
+            : '#ffffff',
+        giant: Math.random() < 0.04
+      });
+    }
+  }
+
+  function spawnShootingStar() {
+    shootingStars.push({
+      x: Math.random() * canvas.width * 0.6,
+      y: Math.random() * canvas.height * 0.4,
+      len: 90 + Math.random() * 130,
+      speed: 7 + Math.random() * 8,
+      alpha: 1,
+      angle: Math.PI / 5 + (Math.random() - 0.5) * 0.3,
+      life: 1
+    });
+  }
+
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    t += 0.012;
+
+    for (const s of stars) {
+      const tw = 0.5 + 0.5 * Math.sin(t * s.twinkleSpeed * 50 + s.twinkleOffset);
+      const a  = s.alpha * (0.5 + 0.5 * tw);
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.fillStyle   = s.color;
+      if (s.giant) {
+        ctx.translate(s.x, s.y);
+        for (let k = 0; k < 4; k++) {
+          ctx.save();
+          ctx.rotate(k * Math.PI / 4);
+          ctx.fillRect(-0.7, -s.r * 2.6, 1.4, s.r * 5.2);
+          ctx.restore();
+        }
+      } else {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    for (let i = shootingStars.length - 1; i >= 0; i--) {
+      const ss = shootingStars[i];
+      ss.life -= 0.022;
+      if (ss.life <= 0) { shootingStars.splice(i, 1); continue; }
+      ss.x += Math.cos(ss.angle) * ss.speed;
+      ss.y += Math.sin(ss.angle) * ss.speed;
+      const tx = ss.x - Math.cos(ss.angle) * ss.len;
+      const ty = ss.y - Math.sin(ss.angle) * ss.len;
+      const g  = ctx.createLinearGradient(tx, ty, ss.x, ss.y);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(1, `rgba(255,255,255,${ss.life * 0.9})`);
+      ctx.save();
+      ctx.strokeStyle = g;
+      ctx.lineWidth   = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(ss.x, ss.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  resize();
+  initStars();
+  draw();
+  setInterval(spawnShootingStar, 2800 + Math.random() * 2000);
+})();
+</script>
+
+<body>
+
+    <!-- ══════════════ PRELOADER ══════════════ -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-ghost">
+            <img src="/assets/base_character-BZXvEEJ3.png" alt="Loading…" class="preloader-ghost-img">
+        </div>
+        <p class="preloader-text">Loading…</p>
+    </div>
+
+    <!-- ══════════════ GAME CONTAINER ══════════════ -->
+    <div class="game-container" id="gameContainer" style="display:none;">
+
+        <!-- star depth layer 3 -->
+        <div class="chalk-noise" aria-hidden="true"></div>
+
+        <!-- ── TOP BAR ── -->
+        <header class="top-bar">
+
+            <!-- Left: settings + sound (desktop/tablet only) -->
+            <div class="top-left-icons">
+                <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+                    <img src="/assets/UI_Button_Chalk-2-CeJ5-Zru.png" alt="">
+                </button>
+                <button class="icon-btn" id="soundBtn" aria-label="Toggle sound">
+                    <img src="/assets/UI_Button_Chalk-3-DM1OCgrn.png" alt="" id="soundIcon">
+                </button>
+            </div>
+
+            <!-- Center: Logo -->
+            <div class="logo-wrapper">
+                <img src="/assets/frame1-CUmT97Ln.png" alt="INKOGNITO" class="logo" id="mainLogo">
+            </div>
+
+            <!-- Right: Language dropdown (desktop/tablet only) -->
+            <div class="top-right">
+                <div class="lang-dropdown" id="langDropdown">
+                    <button class="lang-btn" id="langBtn" aria-haspopup="listbox" aria-expanded="false">
+                        EN
+                    </button>
+                    <div class="lang-menu" id="langMenu" role="listbox" aria-label="Select language">
+                        <button class="lang-option active" data-lang="EN">EN — English</button>
+                        <button class="lang-option" data-lang="ES">ES — Español</button>
+                        <button class="lang-option" data-lang="FR">FR — Français</button>
+                        <button class="lang-option" data-lang="DE">DE — Deutsch</button>
+                        <button class="lang-option" data-lang="PT">PT — Português</button>
+                        <button class="lang-option" data-lang="TR">TR — Türkçe</button>
+                    </div>
+                </div>
+            </div>
+
+        </header>
+
+        <!-- ── CENTERING WRAPPER ── -->
+        <main class="main-content">
+
+            <!-- ── INVITE NOTIFICATION ── -->
+            <div id="inviteNotification" class="invite-notification" style="display:none;">
+                <p>You're about to join room <strong id="inviteRoomCode" style="color:var(--highlight-color,#ffca28);"></strong></p>
+                <p class="invite-subtext">Select your character and name, then press START.</p>
+                <button id="leavePartyBtn" class="chalk-btn leave-party-btn">Leave Party</button>
+            </div>
+
+            <!-- ── THE CARD ── -->
+            <div class="game-card">
+
+                <!-- LEFT: Character selector -->
+                <section class="character-panel" aria-label="Character selection">
+                    <div class="character-display">
+
+                        <!-- Hat arrows -->
+                        <button class="arrow-btn arrow-hat-prev" id="hatPrev" aria-label="Previous hat">
+                            <img src="/assets/Chalk_Arrow_Projectiles-1-C4M_O0e4.png" alt="">
+                        </button>
+                        <button class="arrow-btn arrow-hat-next" id="hatNext" aria-label="Next hat">
+                            <img src="/assets/Chalk_Arrow_Projectiles-1-C4M_O0e4.png" alt="">
+                        </button>
+
+                        <!-- Expression arrows -->
+                        <button class="arrow-btn arrow-expr-prev" id="exprPrev" aria-label="Previous expression">
+                            <img src="/assets/Chalk_Arrow_Projectiles-1-C4M_O0e4.png" alt="">
+                        </button>
+                        <button class="arrow-btn arrow-expr-next" id="exprNext" aria-label="Next expression">
+                            <img src="/assets/Chalk_Arrow_Projectiles-1-C4M_O0e4.png" alt="">
+                        </button>
+
+                        <!-- Avatar -->
+                        <div class="avatar" id="avatar" data-tooltip="Customize your character&#10;Use arrows to change hats and expressions">
+                            <img src="/assets/base_character-BZXvEEJ3.png" alt="Ghost character"
+                                class="char-layer base-layer">
+                            <img src="/assets/MarioHat-Uah5ie0q.png" alt="" class="char-layer hat-layer"
+                                id="hatLayer">
+                            <img src="/assets/glasses-BFfNFB4d.png" alt="" class="char-layer expr-layer"
+                                id="exprLayer">
+                        </div>
+
+                    </div>
+
+                    <!-- Random -->
+                    <button class="random-btn" id="randomBtn" aria-label="Random character" data-tooltip="Randomize your character">
+                        <img src="/assets/randombutton-BDFEfiqo.png" alt="Random">
+                    </button>
+                </section>
+
+                <!-- RIGHT: Name + actions -->
+                <section class="actions-panel" aria-label="Game options">
+
+                    <h1 class="panel-heading">Choose a name and a character</h1>
+
+                    <div class="name-row">
+                        <div class="input-wrapper">
+                            <div class="name-input-container" style="position: relative;">
+                                <input type="text" id="nameInput" class="name-input" placeholder="ENTER A NAME"
+                                    maxlength="20" autocomplete="off" aria-label="Enter your name">
+                                <div id="nameStatusIcon" class="name-status-icon"></div>
+                            </div>
+                            <div class="name-helper-text">This is how other players will see you</div>
+                        </div>
+                    </div>
+
+                    <button class="chalk-btn start-btn" id="startGameBtn" data-tooltip="Join the room with your selected character">START GAME</button>
+
+                    <div class="party-row">
+                        <button class="chalk-btn party-btn" id="createPartyBtn" data-tooltip="Create a private room and invite friends">CREATE PARTY</button>
+                        <button class="chalk-btn join-btn" id="joinBtn" data-tooltip="Join a room using a room code">JOIN</button>
+                    </div>
+
+                </section>
+
+            </div><!-- /.game-card -->
+
+        </main><!-- /.main-content -->
+
+        <!-- ── MOBILE BOTTOM BAR (≤480px only, shown via CSS) ── -->
+        <div class="mobile-bottom-bar" aria-hidden="true">
+            <button class="lang-btn" id="langBtnMobile">EN</button>
+            <button class="icon-btn" id="settingsBtnMobile" aria-label="Settings">
+                <img src="/assets/UI_Button_Chalk-2-CeJ5-Zru.png" alt="">
+            </button>
+        </div>
+
+    </div><!-- /.game-container -->
+
+    <!-- Toast -->
+    <div class="toast-msg" id="toastMsg" role="alert" aria-live="polite"></div>
+
+    <!-- ══════════════ LANGUAGE DROPDOWN LOGIC ══════════════ -->
+    <script>
+        (function () {
+            const btn = document.getElementById('langBtn');
+            const menu = document.getElementById('langMenu');
+            const btnMob = document.getElementById('langBtnMobile');
+
+            function setLang(code) {
+                // update both buttons
+                btn.childNodes[0].textContent = code + ' ';
+                if (btnMob) btnMob.textContent = code;
+                menu.querySelectorAll('.lang-option').forEach(o =>
+                    o.classList.toggle('active', o.dataset.lang === code));
+            }
+
+            function toggleMenu(e) {
+                e.stopPropagation();
+                const open = menu.classList.toggle('open');
+                btn.setAttribute('aria-expanded', open);
+            }
+
+            btn.addEventListener('click', toggleMenu);
+
+            menu.querySelectorAll('.lang-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    setLang(opt.dataset.lang);
+                    menu.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                });
+            });
+
+            document.addEventListener('click', () => {
+                menu.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            });
+
+            // close on Escape
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    menu.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        })();
+    </script>
+
+    <script src="public/shared/tooltip-system.js"></script>
+    <script src="public/shared/socket-client.js"></script>
+    <script src="public/shared/config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize tooltips for elements with data-tooltip attribute
+            document.querySelectorAll('[data-tooltip]').forEach(element => {
+                const text = element.getAttribute('data-tooltip');
+                if (text && window.TooltipSystem) {
+                    window.TooltipSystem.addToElement(element, text.replace('&#10;', '\n'));
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

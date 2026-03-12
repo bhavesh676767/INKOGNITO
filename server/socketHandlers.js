@@ -1,177 +1,625 @@
-const {
-    createRoom,
-    getRoom,
-    joinRoom,
-    removePlayerFromRoom,
-    updateSettings,
-    addCustomWord,
-    removeCustomWord,
-    addChatMessage
-} = require('./roomManager');
+/**
+ * socketHandlers.js — Main Socket.IO event router.
+ * 
+ * All validation happens here before delegating to managers.
+ * Never trusts client data. Always checks permissions.
+ */
+const crypto = require('crypto');
+const { C2S, S2C, PHASE, ERR } = require('./constants/events');
+const { sanitize, sanitizeName, validateAvatar } = require('./utils/sanitize');
+const { validateSettings } = require('./utils/settingsValidator');
 const { generateRoomCode } = require('./utils/generateRoomCode');
-const { sanitize } = require('./utils/sanitize');
+const gameLogic = require('./gameLogic');
+const rm = require('./roomManager');
+
+// ─── Rate Limiting ───
+const chatRateLimits = new Map(); // socketId → { count, resetAt }
+
+function isChatRateLimited(socketId) {
+    const now = Date.now();
+    let entry = chatRateLimits.get(socketId);
+    if (!entry || now > entry.resetAt) {
+        entry = { count: 0, resetAt: now + 5000 }; // 5-second window
+        chatRateLimits.set(socketId, entry);
+    }
+    entry.count++;
+    return entry.count > 5; // max 5 messages per 5 seconds
+}
+
+// ─── Helpers ───
+function emitError(socket, code, message) {
+    socket.emit(S2C.ROOM_ERROR, { code, message });
+}
+
+function genSessionToken() {
+    return crypto.randomBytes(16).toString('hex');
+}
+
+function broadcastRoomState(io, roomCode) {
+    const room = rm.getRoom(roomCode);
+    if (!room) return;
+    io.to(roomCode).emit(S2C.ROOM_UPDATE, rm.getPublicRoomState(room));
+}
+
+function broadcastSystemMessage(io, roomCode, text) {
+    const msgObj = {
+        id: Math.random().toString(36).substring(2, 9),
+        senderId: '__system',
+        senderName: 'SYSTEM',
+        text,
+        timestamp: Date.now(),
+        isSystem: true,
+    };
+    rm.addChatMessage(roomCode, msgObj);
+    io.to(roomCode).emit(S2C.CHAT_NEW_MESSAGE, msgObj);
+}
+
+// ═══════════════════════════════════════════════════════
+// Main Handler Setup
+// ═══════════════════════════════════════════════════════
 
 module.exports = function setupSocketHandlers(io) {
     io.on('connection', (socket) => {
-        console.log('A user connected:', socket.id);
+        console.log(`[CONNECT] ${socket.id}`);
 
-        socket.on('room:create', (playerData) => {
-            const code = generateRoomCode();
-            const safeName = sanitize(playerData.name);
-            const playerHost = {
-                id: socket.id,
-                name: safeName || `Player${Math.floor(Math.random()*1000)}`,
-                avatar: playerData.avatar || { hat: null, expression: null },
-                isHost: true,
-                isConnected: true
-            };
-
-            const room = createRoom(code, socket.id);
-            joinRoom(code, playerHost);
-
-            socket.join(code);
-            socket.emit('room:created', code);
-            io.to(code).emit('room:state', room);
-            console.log(`Room created ${code} by ${playerHost.name}`);
-        });
-
-        socket.on('room:join', ({ roomCode, playerData }) => {
-            const room = getRoom(roomCode);
-            if (!room) {
-                return socket.emit('room:error', { message: 'Room not found.' });
+        // ─────────────────────────────────────────────
+        // ROOM: CREATE
+        // ─────────────────────────────────────────────
+        socket.on(C2S.ROOM_CREATE, (playerData) => {
+            if (!playerData || typeof playerData !== 'object') {
+                return emitError(socket, ERR.INVALID_INPUT, 'Invalid player data.');
             }
 
-            const safeName = sanitize(playerData.name);
+            const name = sanitizeName(playerData.name);
+            if (!name) {
+                return emitError(socket, ERR.INVALID_INPUT, 'Name must be 2-20 characters.');
+            }
+
+            const avatar = validateAvatar(playerData.avatar);
+            const code = generateRoomCode();
+            const sessionToken = genSessionToken();
+
+            const room = rm.createRoom(code, socket.id);
+
             const player = {
                 id: socket.id,
-                name: safeName || `Player${Math.floor(Math.random()*1000)}`,
-                avatar: playerData.avatar || { hat: null, expression: null },
-                isHost: false, // In case of duplicate or someone trying to hijack
-                isConnected: true
+                sessionToken,
+                name,
+                avatar,
+                isHost: true,
+                isConnected: true,
+                joinedAt: Date.now(),
+                lastSeenAt: Date.now(),
             };
 
-            const joinedRoom = joinRoom(roomCode, player);
-            if (joinedRoom && joinedRoom.error) {
-                return socket.emit('room:error', { message: joinedRoom.error });
-            }
+            rm.addPlayer(code, player);
+            rm.setSocketRoom(socket.id, code);
 
-            socket.join(roomCode);
-            socket.emit('room:joined', roomCode);
-            io.to(roomCode).emit('room:state', joinedRoom);
-            console.log(`Player ${player.name} joined room ${roomCode}`);
+            socket.join(code);
+            socket.emit(S2C.ROOM_CREATED, { roomCode: code, sessionToken });
+            broadcastRoomState(io, code);
+
+            // Send host-only data
+            socket.emit(S2C.SETTINGS_UPDATED, {
+                settings: room.settings, // host gets full settings including customWords
+            });
+
+            console.log(`[ROOM CREATE] ${code} by ${name}`);
         });
 
-        socket.on('room:leave', ({ roomCode }) => {
-            const result = removePlayerFromRoom(roomCode, socket.id);
-            if (result && result.action === 'updated') {
-                io.to(roomCode).emit('room:state', result.room);
+        // ─────────────────────────────────────────────
+        // ROOM: JOIN
+        // ─────────────────────────────────────────────
+        socket.on(C2S.ROOM_JOIN, ({ roomCode, playerData }) => {
+            if (!roomCode || typeof roomCode !== 'string') {
+                return emitError(socket, ERR.INVALID_INPUT, 'Room code required.');
             }
-            socket.leave(roomCode);
-            console.log(`Player ${socket.id} left room ${roomCode}`);
+
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+
+            if (!room) {
+                return emitError(socket, ERR.ROOM_NOT_FOUND, 'Room not found.');
+            }
+
+            if (!playerData || typeof playerData !== 'object') {
+                return emitError(socket, ERR.INVALID_INPUT, 'Invalid player data.');
+            }
+
+            const name = sanitizeName(playerData.name);
+            if (!name) {
+                return emitError(socket, ERR.INVALID_INPUT, 'Name must be 2-20 characters.');
+            }
+
+            const avatar = validateAvatar(playerData.avatar);
+            const sessionToken = playerData.sessionToken || genSessionToken();
+
+            const player = {
+                id: socket.id,
+                sessionToken,
+                name,
+                avatar,
+                isHost: false,
+                isConnected: true,
+                joinedAt: Date.now(),
+                lastSeenAt: Date.now(),
+            };
+
+            const result = rm.addPlayer(code, player);
+
+            if (result.error) {
+                const msg = result.error === 'ROOM_FULL' ? 'Room is full.'
+                    : result.error === 'ROOM_IN_GAME' ? 'Game already in progress.'
+                    : 'Cannot join room.';
+                return emitError(socket, result.error, msg);
+            }
+
+            rm.setSocketRoom(socket.id, code);
+            socket.join(code);
+            socket.emit(S2C.ROOM_JOINED, { roomCode: code, sessionToken });
+
+            // Send chat history to new joiner
+            socket.emit('chat:history', room.chat || []);
+
+            broadcastRoomState(io, code);
+
+            // If game is in progress, re-send role/prompt to this player
+            if (room.gameState && room.phase !== PHASE.LOBBY) {
+                const gs = room.gameState;
+                const role = gs.roles[socket.id];
+                if (role) {
+                    // Collect impostor teammates
+                    const impostors = room.players
+                        .filter(p => gs.roles[p.id] === 'Inkognito')
+                        .map(p => ({ id: p.id, name: p.name, avatar: p.avatar }));
+                    
+                    let teammates = null;
+                    if (role === 'Inkognito' && impostors.length > 1) {
+                        teammates = impostors.filter(imp => imp.id !== socket.id);
+                    }
+
+                    socket.emit(S2C.GAME_ROLE, {
+                        role,
+                        prompt: role === 'Artist' ? gs.prompt : null,
+                        teammates,
+                        message: role === 'Artist'
+                            ? `You are an Artist. The secret word is: ${gs.prompt}`
+                            : `You are the Inkognito! Try to blend in.`,
+                    });
+                }
+
+                // If game is in starting/prompt phase, tell the client cinematic should play
+                if (room.phase === PHASE.PROMPT || room.phase === PHASE.STARTING) {
+                    socket.emit(S2C.GAME_STARTING, { message: 'Game is starting...' });
+                }
+            } else {
+                broadcastSystemMessage(io, code, `${name} joined the room.`);
+            }
+
+            console.log(`[JOIN] ${name} → ${code}`);
         });
 
-        socket.on('room:updateSettings', ({ roomCode, settings }) => {
-            const room = getRoom(roomCode);
-            if (!room) return;
-            
-            // Only host can update
-            if (socket.id !== room.hostId) return;
-
-            // Optional: validate settings object here
-            const updatedRoom = updateSettings(roomCode, settings);
-            if (updatedRoom) {
-                io.to(roomCode).emit('room:state', updatedRoom);
+        // ─────────────────────────────────────────────
+        // ROOM: RECONNECT
+        // ─────────────────────────────────────────────
+        socket.on(C2S.ROOM_RECONNECT, ({ sessionToken, roomCode }) => {
+            if (!sessionToken || !roomCode) {
+                return emitError(socket, ERR.INVALID_INPUT, 'Session token and room code required.');
             }
-        });
 
-        socket.on('room:addCustomWord', ({ roomCode, word }) => {
-            const room = getRoom(roomCode);
-            if (!room) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+            if (!room) {
+                return emitError(socket, ERR.ROOM_NOT_FOUND, 'Room no longer exists.');
+            }
 
-            // E.g. check if custom words are enabled or player has perm
-            // (Assuming host or enabled for players, let's allow host or if enabled)
-            if (socket.id !== room.hostId && !room.settings.customWordsEnabled) return;
+            const existingPlayer = room.players.find(p => p.sessionToken === sessionToken);
+            if (!existingPlayer) {
+                return emitError(socket, ERR.NOT_IN_ROOM, 'Session not found in room.');
+            }
 
-            const safeWord = sanitize(word);
-            if (safeWord) {
-                const updatedRoom = addCustomWord(roomCode, safeWord);
-                if (updatedRoom) {
-                    io.to(roomCode).emit('room:state', updatedRoom);
+            // Reclaim session
+            const oldSocketId = existingPlayer.id;
+            existingPlayer.id = socket.id;
+            existingPlayer.isConnected = true;
+            existingPlayer.lastSeenAt = Date.now();
+
+            // Update host reference if this was the host
+            if (room.hostId === oldSocketId) {
+                room.hostId = socket.id;
+            }
+
+            rm.setSocketRoom(socket.id, code);
+            rm.clearDisconnectedSession(sessionToken);
+
+            socket.join(code);
+            socket.emit(S2C.ROOM_JOINED, { roomCode: code, sessionToken });
+
+            // Send chat history
+            socket.emit('chat:history', room.chat || []);
+
+            // Send private game data if game is in progress
+            if (room.gameState && room.gameState.roles) {
+                const role = room.gameState.roles[socket.id] || room.gameState.roles[oldSocketId];
+                if (role) {
+                    // Update role mapping to new socket id
+                    if (room.gameState.roles[oldSocketId]) {
+                        room.gameState.roles[socket.id] = room.gameState.roles[oldSocketId];
+                        delete room.gameState.roles[oldSocketId];
+                    }
+                    // Update turnOrder
+                    const turnIdx = room.gameState.turnOrder.indexOf(oldSocketId);
+                    if (turnIdx !== -1) {
+                        room.gameState.turnOrder[turnIdx] = socket.id;
+                    }
+                    // Update inkLeft
+                    if (room.gameState.inkLeft[oldSocketId] !== undefined) {
+                        room.gameState.inkLeft[socket.id] = room.gameState.inkLeft[oldSocketId];
+                        delete room.gameState.inkLeft[oldSocketId];
+                    }
+
+                    socket.emit(S2C.GAME_ROLE, {
+                        role,
+                        prompt: role === 'Artist' ? room.gameState.prompt : null,
+                        message: role === 'Artist'
+                            ? `You are an Artist. The secret word is: ${room.gameState.prompt}`
+                            : `You are the Inkognito! Try to blend in.`,
+                    });
                 }
             }
+
+            broadcastRoomState(io, code);
+            broadcastSystemMessage(io, code, `${existingPlayer.name} reconnected.`);
+
+            console.log(`[RECONNECT] ${existingPlayer.name} → ${code}`);
         });
 
-        socket.on('room:removeCustomWord', ({ roomCode, word }) => {
-            const room = getRoom(roomCode);
-            if (!room) return;
+        // ─────────────────────────────────────────────
+        // ROOM: LEAVE
+        // ─────────────────────────────────────────────
+        socket.on(C2S.ROOM_LEAVE, ({ roomCode }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
 
-            // Only host can remove
-            if (socket.id !== room.hostId) return;
+            const result = rm.removePlayer(code, socket.id);
+            rm.clearSocketRoom(socket.id);
+            socket.leave(code);
 
-            const updatedRoom = removeCustomWord(roomCode, word);
-            if(updatedRoom) {
-                io.to(roomCode).emit('room:state', updatedRoom);
+            if (result.action === 'updated') {
+                broadcastRoomState(io, code);
+                if (result.player) {
+                    broadcastSystemMessage(io, code, `${result.player.name} left.`);
+                }
+                // If host changed, notify
+                const room = rm.getRoom(code);
+                if (room) {
+                    const newHost = room.players.find(p => p.isHost);
+                    if (newHost && result.player && result.player.isHost) {
+                        broadcastSystemMessage(io, code, `${newHost.name} is the new host.`);
+                    }
+                }
+            }
+
+            console.log(`[LEAVE] ${socket.id} ← ${code}`);
+        });
+
+        // ─────────────────────────────────────────────
+        // ROOM: REQUEST STATE (for refresh/sync)
+        // ─────────────────────────────────────────────
+        socket.on(C2S.ROOM_REQUEST_STATE, ({ roomCode }) => {
+            if (!roomCode) return;
+            const room = rm.getRoom(roomCode.toUpperCase().trim());
+            if (!room) return emitError(socket, ERR.ROOM_NOT_FOUND, 'Room not found.');
+
+            socket.emit(S2C.ROOM_UPDATE, rm.getPublicRoomState(room));
+
+            // Host gets extra data
+            if (socket.id === room.hostId) {
+                socket.emit(S2C.SETTINGS_UPDATED, { settings: room.settings });
             }
         });
 
-        socket.on('chat:send', ({ roomCode, message }) => {
-            const room = getRoom(roomCode);
+        // ─────────────────────────────────────────────
+        // PLAYER: UPDATE PROFILE
+        // ─────────────────────────────────────────────
+        socket.on(C2S.PLAYER_UPDATE, ({ roomCode, name, avatar }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
             if (!room) return;
 
             const player = room.players.find(p => p.id === socket.id);
             if (!player) return;
 
-            const safeMessage = sanitize(message);
-            if(safeMessage) {
-                const msgObj = {
-                    sender: player.name,
-                    text: safeMessage,
-                    timestamp: Date.now()
-                };
-                
-                // Add to room state and broadcast
-                const updatedRoom = addChatMessage(roomCode, msgObj);
-                if(updatedRoom) {
-                    io.to(roomCode).emit('chat:message', msgObj);
-                }
+            if (name !== undefined) {
+                const cleanName = sanitizeName(name);
+                if (cleanName) player.name = cleanName;
+            }
+            if (avatar !== undefined) {
+                player.avatar = validateAvatar(avatar);
+            }
+
+            player.lastSeenAt = Date.now();
+            broadcastRoomState(io, code);
+        });
+
+        // ─────────────────────────────────────────────
+        // SETTINGS: UPDATE (host only)
+        // ─────────────────────────────────────────────
+        socket.on(C2S.SETTINGS_UPDATE, ({ roomCode, settings }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+            if (!room) return;
+
+            // ── Host check ──
+            if (socket.id !== room.hostId) {
+                return emitError(socket, ERR.NOT_HOST, 'Only the host can change settings.');
+            }
+
+            // ── Phase check — settings only changeable in lobby ──
+            if (room.phase !== PHASE.LOBBY) {
+                return emitError(socket, ERR.INVALID_PHASE, 'Settings can only be changed in the lobby.');
+            }
+
+            const result = validateSettings(room.settings, settings);
+            if (!result.valid) {
+                return emitError(socket, ERR.INVALID_SETTINGS, result.errors.join(', '));
+            }
+
+            rm.updateSettings(code, result.settings);
+
+            // Full settings to host, public settings to everyone else
+            socket.emit(S2C.SETTINGS_UPDATED, { settings: result.settings });
+            broadcastRoomState(io, code);
+        });
+
+        // ─────────────────────────────────────────────
+        // CUSTOM WORDS (host only)
+        // ─────────────────────────────────────────────
+        socket.on(C2S.CUSTOM_WORD_ADD, ({ roomCode, word }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+            if (!room) return;
+            if (socket.id !== room.hostId) return;
+            if (room.phase !== PHASE.LOBBY) return;
+
+            const safeWord = sanitize(word, 30);
+            if (!safeWord) return;
+
+            if (!room.settings.customWords.includes(safeWord) && room.settings.customWords.length < 20) {
+                room.settings.customWords.push(safeWord);
+                // Only host needs to see it
+                socket.emit(S2C.SETTINGS_UPDATED, { settings: room.settings });
+                broadcastRoomState(io, code);
             }
         });
 
-        socket.on('game:start', ({ roomCode }) => {
-            const room = getRoom(roomCode);
+        socket.on(C2S.CUSTOM_WORD_REMOVE, ({ roomCode, word }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+            if (!room) return;
+            if (socket.id !== room.hostId) return;
+            if (room.phase !== PHASE.LOBBY) return;
+
+            room.settings.customWords = room.settings.customWords.filter(w => w !== word);
+            socket.emit(S2C.SETTINGS_UPDATED, { settings: room.settings });
+            broadcastRoomState(io, code);
+        });
+
+        // ─────────────────────────────────────────────
+        // CHAT: SEND
+        // ─────────────────────────────────────────────
+        socket.on(C2S.CHAT_SEND, ({ roomCode, message }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
             if (!room) return;
 
-            // Only host can start
-            if (socket.id !== room.hostId) return;
+            const player = room.players.find(p => p.id === socket.id);
+            if (!player || !player.isConnected) return;
 
-            // Validate constraints (e.g. at least min players, though MVP might allow 1 or 2 minimum)
-            // if (room.players.length < 2) return socket.emit('room:error', { message: 'Not enough players' });
+            // Rate limiting
+            if (isChatRateLimited(socket.id)) {
+                return emitError(socket, ERR.RATE_LIMITED, 'Slow down! Too many messages.');
+            }
 
-            room.phase = 'starting';
-            io.to(roomCode).emit('game:starting', { message: 'Game is starting...' });
+            const text = sanitize(message, 120);
+            if (!text) return;
+
+            const msgObj = {
+                id: Math.random().toString(36).substring(2, 9),
+                senderId: player.id,
+                senderName: player.name,
+                text,
+                timestamp: Date.now(),
+                isSystem: false,
+            };
+
+            rm.addChatMessage(code, msgObj);
+            io.to(code).emit(S2C.CHAT_NEW_MESSAGE, msgObj);
         });
 
-        socket.on('disconnect', () => {
-            console.log('User disconnected:', socket.id);
-            // We need to find the room this socket was in. 
-            // In a better structure, socket might have attached roomCode
-            // or we loop through rooms. For MVP, we loop since `rooms` isn't huge.
-            const { rooms } = require('./roomManager'); // actually, we can't easily iterate Map unless exposed
-            // Wait, we can. but `rooms` is inside roomManager.js.
-            // Let's add an explicit helper or just loop if we expose rooms.
+        // ─────────────────────────────────────────────
+        // GAME: START (host only)
+        // ─────────────────────────────────────────────
+        socket.on(C2S.GAME_START, ({ roomCode }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+            if (!room) return emitError(socket, ERR.ROOM_NOT_FOUND, 'Room not found.');
+
+            if (socket.id !== room.hostId) {
+                return emitError(socket, ERR.NOT_HOST, 'Only the host can start the game.');
+            }
+
+            if (room.phase !== PHASE.LOBBY) {
+                return emitError(socket, ERR.INVALID_PHASE, 'Game can only start from the lobby.');
+            }
+
+            const connected = room.players.filter(p => p.isConnected).length;
+            if (connected < 4) {
+                return emitError(socket, ERR.NOT_ENOUGH_PLAYERS, 'Minimum 4 players required.');
+            }
+
+            // Transition: show "starting" briefly
+            room.phase = PHASE.STARTING;
+            io.to(code).emit(S2C.GAME_STARTING, { message: 'Game is starting...' });
+            broadcastRoomState(io, code);
+
+            // After 1.5s, actually initialize game
+            setTimeout(() => {
+                const result = gameLogic.startGame(code, io);
+                if (result && result.error) {
+                    room.phase = PHASE.LOBBY;
+                    broadcastRoomState(io, code);
+                    emitError(socket, ERR.NOT_ENOUGH_PLAYERS, result.error);
+                }
+            }, 1500);
         });
-        
-        // Disconnecting handler properly
+
+        // ─────────────────────────────────────────────
+        // GAME: RESTART (host only)
+        // ─────────────────────────────────────────────
+        socket.on(C2S.GAME_RESTART, ({ roomCode }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+            if (!room) return;
+            if (socket.id !== room.hostId) {
+                return emitError(socket, ERR.NOT_HOST, 'Only the host can restart.');
+            }
+            if (room.phase !== PHASE.END) {
+                return emitError(socket, ERR.INVALID_PHASE, 'Can only restart after game ends.');
+            }
+
+            room.phase = PHASE.STARTING;
+            io.to(code).emit(S2C.GAME_STARTING, { message: 'Restarting...' });
+            broadcastRoomState(io, code);
+
+            setTimeout(() => {
+                const result = gameLogic.restartGame(code, io);
+                if (result && result.error) {
+                    room.phase = PHASE.LOBBY;
+                    broadcastRoomState(io, code);
+                    emitError(socket, ERR.NOT_ENOUGH_PLAYERS, result.error);
+                }
+            }, 1500);
+        });
+
+        // ─────────────────────────────────────────────
+        // GAME: RETURN TO LOBBY (host only)
+        // ─────────────────────────────────────────────
+        socket.on(C2S.GAME_RETURN_LOBBY, ({ roomCode }) => {
+            if (!roomCode) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+            if (!room) return;
+            if (socket.id !== room.hostId) {
+                return emitError(socket, ERR.NOT_HOST, 'Only the host can return to lobby.');
+            }
+
+            gameLogic.returnToLobby(code, io);
+        });
+
+        // ─────────────────────────────────────────────
+        // DRAW: STROKE
+        // ─────────────────────────────────────────────
+        socket.on(C2S.DRAW_STROKE, ({ roomCode, stroke }) => {
+            if (!roomCode || !stroke) return;
+            const code = roomCode.toUpperCase().trim();
+            const room = rm.getRoom(code);
+            if (!room || room.phase !== PHASE.DRAWING || !room.gameState) return;
+
+            // Validate it's this player's turn
+            if (!gameLogic.isCurrentDrawer(code, socket.id)) return;
+
+            // Validate stroke data
+            if (!stroke.points || !Array.isArray(stroke.points)) return;
+            if (stroke.points.length > 500) return; // reject absurdly long strokes
+
+            // Relay to everyone else in room
+            socket.to(code).emit(S2C.DRAW_STROKE, stroke);
+
+            // Deduct ink
+            const pts = stroke.points.length;
+            const inkDeducted = Math.max(0.5, pts * 0.1);
+            const remaining = gameLogic.decreaseInk(code, socket.id, inkDeducted);
+
+            if (remaining <= 0) {
+                socket.emit(S2C.GAME_OUT_OF_INK);
+            }
+        });
+
+        // ─────────────────────────────────────────────
+        // VOTE: SUBMIT
+        // ─────────────────────────────────────────────
+        socket.on(C2S.VOTE_SUBMIT, ({ roomCode, suspectId }) => {
+            if (!roomCode || !suspectId) return;
+            const code = roomCode.toUpperCase().trim();
+
+            const success = gameLogic.submitVote(code, socket.id, suspectId);
+            if (!success) {
+                emitError(socket, ERR.INVALID_PHASE, 'Vote rejected.');
+            }
+        });
+
+        // ═════════════════════════════════════════════
+        // DISCONNECT HANDLING
+        // ═════════════════════════════════════════════
+
         socket.on('disconnecting', () => {
-            const socketRooms = Array.from(socket.rooms); // socket.rooms is Set
-            for (let roomCode of socketRooms) {
-                if (roomCode !== socket.id) { // default room is socket.id
-                    const result = removePlayerFromRoom(roomCode, socket.id);
-                    if (result && result.action === 'updated') {
-                        io.to(roomCode).emit('room:state', result.room);
+            const socketRooms = Array.from(socket.rooms);
+            for (const roomCode of socketRooms) {
+                if (roomCode === socket.id) continue; // skip default room
+
+                const room = rm.getRoom(roomCode);
+                if (!room) continue;
+
+                const player = room.players.find(p => p.id === socket.id);
+                if (!player) continue;
+
+                if (room.phase === PHASE.LOBBY) {
+                    // In lobby: full removal
+                    const result = rm.removePlayer(roomCode, socket.id);
+                    if (result.action === 'updated') {
+                        broadcastRoomState(io, roomCode);
+                        broadcastSystemMessage(io, roomCode, `${player.name} left.`);
+
+                        // Host migration notification
+                        if (player.isHost) {
+                            const newHost = result.room.players.find(p => p.isHost);
+                            if (newHost) {
+                                broadcastSystemMessage(io, roomCode, `${newHost.name} is now the host.`);
+                            }
+                        }
+                    }
+                } else {
+                    // In-game: mark disconnected (allow reconnect)
+                    const dcResult = rm.markDisconnected(roomCode, socket.id);
+                    if (dcResult) {
+                        broadcastRoomState(io, roomCode);
+                        broadcastSystemMessage(io, roomCode, `${player.name} disconnected.`);
+
+                        // If host changed
+                        if (player.isHost) {
+                            const newHost = dcResult.room.players.find(p => p.isHost);
+                            if (newHost) {
+                                broadcastSystemMessage(io, roomCode, `${newHost.name} is now the host.`);
+                            }
+                        }
                     }
                 }
             }
+
+            rm.clearSocketRoom(socket.id);
+        });
+
+        socket.on('disconnect', () => {
+            chatRateLimits.delete(socket.id);
+            console.log(`[DISCONNECT] ${socket.id}`);
         });
     });
 };

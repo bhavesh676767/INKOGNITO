@@ -77,21 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
         localPlayerId = socket.id;
     });
 
-    socket.on('room:created', (data) => {
-        // Backend sends { roomCode, sessionToken }
-        const code = typeof data === 'string' ? data : data.roomCode;
+    socket.on('room:created', (code) => {
         currentRoomCode = code;
-        if (data.sessionToken) sessionStorage.setItem('inkognito_session', data.sessionToken);
         updateURL(code);
-        updateRoomCodeDisplay(code);
     });
 
-    socket.on('room:joined', (data) => {
-        const code = typeof data === 'string' ? data : data.roomCode;
+    socket.on('room:joined', (code) => {
         currentRoomCode = code;
-        if (data.sessionToken) sessionStorage.setItem('inkognito_session', data.sessionToken);
         updateURL(code);
-        updateRoomCodeDisplay(code);
     });
 
     socket.on('room:state', (room) => {
@@ -99,26 +92,14 @@ document.addEventListener('DOMContentLoaded', () => {
         preloader.style.display = 'none';
         lobbyContainer.style.display = 'flex';
 
-        // Update room code display
-        if (room.roomCode) {
-            currentRoomCode = room.roomCode;
-            updateRoomCodeDisplay(room.roomCode);
-        }
-
         // Check if we are host
         const myPlayer = room.players.find(p => p.id === socket.id);
         isHost = myPlayer ? myPlayer.isHost : false;
 
-        // Update player count
-        const countEl = document.getElementById('playerCount');
-        const maxEl = document.getElementById('maxPlayersDisplay');
-        if (countEl) countEl.textContent = room.players.filter(p => p.isConnected).length;
-        if (maxEl) maxEl.textContent = room.settings.maxPlayers || 6;
-
         renderPlayers(room.players, room.hostId);
         renderSettings(room.settings);
         renderModes(room.settings.mode);
-        renderCustomWords(room.settings.customWords || []);
+        renderCustomWords(room.settings.customWords);
         updateHostControls();
     });
 
@@ -130,30 +111,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     });
 
-    socket.on('chat:newMessage', (msg) => {
+    socket.on('chat:message', (msg) => {
         renderChatMessage(msg);
-    });
-
-    socket.on('chat:history', (messages) => {
-        chatMessages.innerHTML = '';
-        (messages || []).forEach(msg => renderChatMessage(msg));
     });
 
     socket.on('game:starting', (data) => {
         showToast(data.message);
+        // Hide leave lobby once game begins
         if (leaveLobbyBtn) leaveLobbyBtn.style.display = 'none';
         
+        // In full game, redirect to gameplay page
         setTimeout(() => {
-            window.location.href = `/game/game.html?room=${currentRoomCode}`;
+            showToast("Redirecting to game... (Feature pending)");
         }, 1500);
-    });
-
-    // Host receives full settings including custom words
-    socket.on('settings:updated', (data) => {
-        if (data && data.settings) {
-            renderSettings(data.settings);
-            renderCustomWords(data.settings.customWords || []);
-        }
     });
 
     // =============== RENDER FUNCTIONS ===============
@@ -245,14 +215,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderChatMessage(msg) {
         const div = document.createElement('div');
-        const senderName = msg.senderName || msg.sender || 'Unknown';
-        if (msg.isSystem) {
-            div.className = 'chat-msg system';
-            div.innerHTML = `<span class="msg-sender">SYSTEM</span>${escapeHTML(msg.text)}`;
-        } else {
-            div.className = 'chat-msg';
-            div.innerHTML = `<span class="msg-sender">${escapeHTML(senderName)}:</span> <span class="msg-text">${escapeHTML(msg.text)}</span>`;
-        }
+        div.className = 'chat-msg';
+        div.innerHTML = `<span class="msg-sender">${escapeHTML(msg.sender)}:</span> <span class="msg-text">${escapeHTML(msg.text)}</span>`;
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -395,11 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.history.replaceState({}, '', url);
     }
 
-    function updateRoomCodeDisplay(code) {
-        const roomCodeVal = document.getElementById('roomCodeVal');
-        if (roomCodeVal) roomCodeVal.textContent = code;
-    }
-
     function showToast(msg) {
         toast.textContent = msg;
         toast.classList.add('show');
@@ -420,16 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // =============== STARFIELD BACKGROUND ===============
     function initStarfield() {
-        let canvas = document.getElementById('starfield');
-        if (!canvas) {
-            // Create starfield canvas dynamically if it doesn't exist
-            canvas = document.createElement('canvas');
-            canvas.id = 'starfield';
-            canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;';
-            const lobbyEl = document.getElementById('lobbyContainer');
-            if (lobbyEl) lobbyEl.prepend(canvas);
-            else return;
-        }
+        const canvas = document.getElementById('starfield');
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
         
         let width = window.innerWidth;
