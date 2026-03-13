@@ -54,6 +54,48 @@ function broadcastSystemMessage(io, roomCode, text) {
     io.to(roomCode).emit(S2C.CHAT_NEW_MESSAGE, msgObj);
 }
 
+/**
+ * Updates game state (roles, turn order, ink) when a player's socket ID changes.
+ */
+function syncGameStateSocketId(room, oldSocketId, newSocketId) {
+    if (!room || !room.gameState) return;
+    const gs = room.gameState;
+
+    // 1. Update roles mapping
+    if (gs.roles && gs.roles[oldSocketId]) {
+        gs.roles[newSocketId] = gs.roles[oldSocketId];
+        delete gs.roles[oldSocketId];
+    }
+
+    // 2. Update turn order array
+    if (gs.turnOrder) {
+        const turnIdx = gs.turnOrder.indexOf(oldSocketId);
+        if (turnIdx !== -1) {
+            gs.turnOrder[turnIdx] = newSocketId;
+        }
+    }
+
+    // 3. Update ink tracking
+    if (gs.inkLeft && gs.inkLeft[oldSocketId] !== undefined) {
+        gs.inkLeft[newSocketId] = gs.inkLeft[oldSocketId];
+        delete gs.inkLeft[oldSocketId];
+    }
+
+    // 4. Update votes (if any)
+    if (gs.votes) {
+        if (gs.votes[oldSocketId]) {
+            gs.votes[newSocketId] = gs.votes[oldSocketId];
+            delete gs.votes[oldSocketId];
+        }
+        // Also update if someone voted FOR this player
+        for (const voterId in gs.votes) {
+            if (gs.votes[voterId] === oldSocketId) {
+                gs.votes[voterId] = newSocketId;
+            }
+        }
+    }
+}
+
 // ═══════════════════════════════════════════════════════
 // Main Handler Setup
 // ═══════════════════════════════════════════════════════
@@ -98,6 +140,7 @@ module.exports = function setupSocketHandlers(io) {
             socket.join(code);
             socket.emit(S2C.ROOM_CREATED, { roomCode: code, sessionToken });
             broadcastRoomState(io, code);
+            broadcastSystemMessage(io, code, 'Lobby created. Invite your friends!');
 
             // Send host-only data
             socket.emit(S2C.SETTINGS_UPDATED, {
@@ -152,6 +195,15 @@ module.exports = function setupSocketHandlers(io) {
                     : result.error === 'ROOM_IN_GAME' ? 'Game already in progress.'
                     : 'Cannot join room.';
                 return emitError(socket, result.error, msg);
+            }
+
+            // If this was a reconnection/navigation, sync state
+            if (result.oldSocketId) {
+                syncGameStateSocketId(room, result.oldSocketId, socket.id);
+                // Also update host reference if needed (though addPlayer/markDisconnected should handle it)
+                if (room.hostId === result.oldSocketId) {
+                    room.hostId = socket.id;
+                }
             }
 
             rm.setSocketRoom(socket.id, code);
@@ -232,6 +284,9 @@ module.exports = function setupSocketHandlers(io) {
             rm.setSocketRoom(socket.id, code);
             rm.clearDisconnectedSession(sessionToken);
 
+            // Sync state
+            syncGameStateSocketId(room, oldSocketId, socket.id);
+
             socket.join(code);
             socket.emit(S2C.ROOM_JOINED, { roomCode: code, sessionToken });
 
@@ -240,24 +295,8 @@ module.exports = function setupSocketHandlers(io) {
 
             // Send private game data if game is in progress
             if (room.gameState && room.gameState.roles) {
-                const role = room.gameState.roles[socket.id] || room.gameState.roles[oldSocketId];
+                const role = room.gameState.roles[socket.id];
                 if (role) {
-                    // Update role mapping to new socket id
-                    if (room.gameState.roles[oldSocketId]) {
-                        room.gameState.roles[socket.id] = room.gameState.roles[oldSocketId];
-                        delete room.gameState.roles[oldSocketId];
-                    }
-                    // Update turnOrder
-                    const turnIdx = room.gameState.turnOrder.indexOf(oldSocketId);
-                    if (turnIdx !== -1) {
-                        room.gameState.turnOrder[turnIdx] = socket.id;
-                    }
-                    // Update inkLeft
-                    if (room.gameState.inkLeft[oldSocketId] !== undefined) {
-                        room.gameState.inkLeft[socket.id] = room.gameState.inkLeft[oldSocketId];
-                        delete room.gameState.inkLeft[oldSocketId];
-                    }
-
                     socket.emit(S2C.GAME_ROLE, {
                         role,
                         prompt: role === 'Artist' ? room.gameState.prompt : null,
@@ -510,15 +549,21 @@ module.exports = function setupSocketHandlers(io) {
         });
 
         // ─────────────────────────────────────────────
-        // GAME: RETURN TO LOBBY (host only)
+        // GAME: RETURN TO LOBBY
         // ─────────────────────────────────────────────
         socket.on(C2S.GAME_RETURN_LOBBY, ({ roomCode }) => {
             if (!roomCode) return;
             const code = roomCode.toUpperCase().trim();
             const room = rm.getRoom(code);
             if (!room) return;
-            if (socket.id !== room.hostId) {
-                return emitError(socket, ERR.NOT_HOST, 'Only the host can return to lobby.');
+
+            const player = room.players.find(p => p.id === socket.id && p.isConnected);
+            if (!player) {
+                return emitError(socket, ERR.NOT_IN_ROOM, 'You are not in this room.');
+            }
+
+            if (room.phase !== PHASE.END && socket.id !== room.hostId) {
+                return emitError(socket, ERR.NOT_HOST, 'Only the host can return to lobby right now.');
             }
 
             gameLogic.returnToLobby(code, io);
@@ -560,7 +605,7 @@ module.exports = function setupSocketHandlers(io) {
             if (!roomCode || !suspectId) return;
             const code = roomCode.toUpperCase().trim();
 
-            const success = gameLogic.submitVote(code, socket.id, suspectId);
+            const success = gameLogic.submitVote(code, socket.id, suspectId, io);
             if (!success) {
                 emitError(socket, ERR.INVALID_PHASE, 'Vote rejected.');
             }

@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentRoomCode = null;
     let isHost = false;
     let localPlayerId = null; 
+    const SESSION_TOKEN_KEY = 'inkognito_session';
+    const SESSION_ROOM_KEY = 'inkognito_session_room';
 
     // Get player data from session storage (saved from entry page)
     const storedPlayer = sessionStorage.getItem('inkognito_player');
@@ -61,11 +63,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Find room from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const urlRoomCode = urlParams.get('room');
+    const urlRoomCode = normalizeRoomCode(urlParams.get('room'));
+    const storedSessionToken = sessionStorage.getItem(SESSION_TOKEN_KEY);
+    const storedSessionRoom = normalizeRoomCode(sessionStorage.getItem(SESSION_ROOM_KEY));
 
     // Init Join or Create
     if (urlRoomCode) {
-        socket.emit('room:join', { roomCode: urlRoomCode, playerData });
+        if (storedSessionToken && storedSessionRoom === urlRoomCode) {
+            socket.emit('room:reconnect', { roomCode: urlRoomCode, sessionToken: storedSessionToken });
+        } else {
+            socket.emit('room:join', { roomCode: urlRoomCode, playerData });
+        }
     } else {
         // No room code means they came here to create a room
         socket.emit('room:create', playerData);
@@ -79,17 +87,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('room:created', (data) => {
         // Backend sends { roomCode, sessionToken }
-        const code = typeof data === 'string' ? data : data.roomCode;
+        const code = normalizeRoomCode(typeof data === 'string' ? data : data.roomCode);
         currentRoomCode = code;
-        if (data.sessionToken) sessionStorage.setItem('inkognito_session', data.sessionToken);
+        persistSession(code, data && data.sessionToken);
         updateURL(code);
         updateRoomCodeDisplay(code);
     });
 
     socket.on('room:joined', (data) => {
-        const code = typeof data === 'string' ? data : data.roomCode;
+        const code = normalizeRoomCode(typeof data === 'string' ? data : data.roomCode);
         currentRoomCode = code;
-        if (data.sessionToken) sessionStorage.setItem('inkognito_session', data.sessionToken);
+        persistSession(code, data && data.sessionToken);
         updateURL(code);
         updateRoomCodeDisplay(code);
     });
@@ -123,6 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('room:error', (data) => {
+        if (data && (data.code === 'NOT_IN_ROOM' || data.code === 'ROOM_NOT_FOUND')) {
+            clearStoredSession(urlRoomCode || currentRoomCode);
+        }
         showToast(data.message);
         // Fallback: try creating a new room or return to entry
         setTimeout(() => {
@@ -362,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentRoomCode) {
                 socket.emit('room:leave', { roomCode: currentRoomCode });
             }
+            clearStoredSession(currentRoomCode);
             window.location.href = '/';
         });
     }
@@ -393,6 +405,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = new URL(window.location);
         url.searchParams.set('room', code);
         window.history.replaceState({}, '', url);
+    }
+
+    function normalizeRoomCode(code) {
+        return typeof code === 'string' && code.trim() ? code.trim().toUpperCase() : null;
+    }
+
+    function persistSession(code, sessionToken) {
+        if (sessionToken) {
+            sessionStorage.setItem(SESSION_TOKEN_KEY, sessionToken);
+        }
+        if (code) {
+            sessionStorage.setItem(SESSION_ROOM_KEY, code);
+        }
+    }
+
+    function clearStoredSession(roomCode) {
+        const storedRoom = normalizeRoomCode(sessionStorage.getItem(SESSION_ROOM_KEY));
+        if (!roomCode || !storedRoom || storedRoom === normalizeRoomCode(roomCode)) {
+            sessionStorage.removeItem(SESSION_TOKEN_KEY);
+            sessionStorage.removeItem(SESSION_ROOM_KEY);
+        }
     }
 
     function updateRoomCodeDisplay(code) {

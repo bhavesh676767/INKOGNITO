@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Drawing
     let isDrawing = false;
-    let currentColor = '#000000';
+    let currentColor = '#ffffff';
     let currentBrushSize = 3;
     let maxInk = 50;
     let currentInk = 50;
@@ -41,15 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cinematic tracking
     let cinematicPlayed = false;
     let roleReceived = false;
-    let cinematicStepInterval = null;
-    const cinematicTimeouts = [];
-    const voteResultTimeouts = [];
-    const OVERLAY_FADE_MS = 1000;
-    const DRAWING_ENTRY_FADE_MS = 1100;
-    const VOTE_RESULT_HOLD_MS = 4000;
-    const VOTE_RESULT_EXIT_MS = 3000;
-    const CINEMATIC_COUNTDOWN_STEP_MS = 1200;
-    const CINEMATIC_ROLE_REVEAL_MS = 3400;
 
     // ══════════════════════════════════════════════
     // DOM REFS
@@ -132,80 +123,32 @@ document.addEventListener('DOMContentLoaded', () => {
         return backendWinner;
     }
 
-    function trackTimeout(bucket, callback, delay) {
-        const id = setTimeout(callback, delay);
-        bucket.push(id);
-        return id;
-    }
-
-    function clearTrackedTimeouts(bucket) {
-        while (bucket.length > 0) {
-            clearTimeout(bucket.pop());
-        }
-    }
-
     // ══════════════════════════════════════════════
     // PHASE MANAGEMENT
     // ══════════════════════════════════════════════
-    function hideOverlayImmediate(overlay) {
-        if (!overlay) return;
-        overlay.classList.remove('is-entering', 'is-exiting');
-        overlay.style.removeProperty('--overlay-exit-duration');
-        overlay.style.display = 'none';
-    }
-
-    function showOverlay(overlay) {
-        if (!overlay) return;
-        overlay.classList.remove('is-entering', 'is-exiting');
-        overlay.style.removeProperty('--overlay-exit-duration');
-        overlay.style.display = 'flex';
-        void overlay.offsetWidth;
-        overlay.classList.add('is-entering');
-    }
-
-    function fadeOutOverlay(overlay, duration = OVERLAY_FADE_MS) {
-        return new Promise((resolve) => {
-            if (!overlay || overlay.style.display === 'none') {
-                resolve();
-                return;
-            }
-
-            overlay.classList.remove('is-entering');
-            overlay.style.setProperty('--overlay-exit-duration', `${duration}ms`);
-            overlay.classList.add('is-exiting');
-
-            setTimeout(() => {
-                hideOverlayImmediate(overlay);
-                resolve();
-            }, duration);
-        });
-    }
-
-    function hideAllOverlays() {
-        hideOverlayImmediate(votingOverlay);
-        hideOverlayImmediate(voteResultOverlay);
-        hideOverlayImmediate(winnerOverlay);
-        hideOverlayImmediate(cinematicOverlay);
-    }
-
     function showPhase(phase) {
-        hideAllOverlays();
+        // Hide all overlays initially
+        votingOverlay.style.display = 'none';
+        voteResultOverlay.style.display = 'none';
+        winnerOverlay.style.display = 'none';
+        cinematicOverlay.style.display = 'none';
 
         if (phase === 'drawing' || phase === 'prompt') {
             gameContainer.style.display = 'flex';
         } else if (phase === 'starting') {
             gameContainer.style.display = 'none';
-            showOverlay(cinematicOverlay);
+            cinematicOverlay.style.display = 'flex';
         } else if (phase === 'voting') {
             gameContainer.style.display = 'none';
-            showOverlay(votingOverlay);
+            votingOverlay.style.display = 'flex';
         } else if (phase === 'voteResult') {
             gameContainer.style.display = 'none';
-            showOverlay(voteResultOverlay);
+            voteResultOverlay.style.display = 'flex';
         } else if (phase === 'end') {
             gameContainer.style.display = 'none';
-            showOverlay(winnerOverlay);
+            winnerOverlay.style.display = 'flex';
         } else if (phase === 'lobby') {
+            // Go back to lobby
             window.location.href = `/pregame-lobby/pregame-lobby.html?room=${roomCode}`;
         }
     }
@@ -213,73 +156,49 @@ document.addEventListener('DOMContentLoaded', () => {
     // ══════════════════════════════════════════════
     // CINEMATIC START SEQUENCE
     // ══════════════════════════════════════════════
-    function hideCinematicStep(step) {
-        if (!step) return;
-        step.classList.remove('is-visible');
-        step.classList.add('is-exiting');
-        trackTimeout(cinematicTimeouts, () => {
-            step.classList.remove('is-exiting');
-            step.style.display = 'none';
-        }, 500);
-    }
-
-    function showCinematicStep(step) {
-        if (!step) return;
-        step.classList.remove('is-exiting');
-        step.style.display = 'flex';
-        void step.offsetWidth;
-        step.classList.add('is-visible');
-    }
-
-    function restartCountdownPulse() {
-        countdownNumber.style.animation = 'none';
-        void countdownNumber.offsetWidth;
-        countdownNumber.style.animation = '';
-    }
-
-    function clearCinematicSequence() {
-        clearTrackedTimeouts(cinematicTimeouts);
-        if (cinematicStepInterval) {
-            clearInterval(cinematicStepInterval);
-            cinematicStepInterval = null;
-        }
-        [cinematicCountdown, cinematicRole, cinematicWord].forEach((step) => {
-            step.classList.remove('is-visible', 'is-exiting');
-            step.style.display = 'none';
-        });
-    }
-
     function playCinematicStart() {
-        clearCinematicSequence();
-        showOverlay(cinematicOverlay);
-        showCinematicStep(cinematicCountdown);
+        cinematicOverlay.style.display = 'flex';
+        
+        // 1. Hide all steps
+        cinematicCountdown.style.display = 'none';
+        cinematicRole.style.display = 'none';
+        cinematicWord.style.display = 'none';
 
+        // 2. Start Countdown
+        cinematicCountdown.style.display = 'flex';
         let count = 3;
         countdownNumber.textContent = count;
-        restartCountdownPulse();
-
-        cinematicStepInterval = setInterval(() => {
+        
+        const countInterval = setInterval(() => {
             count--;
             if (count > 0) {
                 countdownNumber.textContent = count;
-                restartCountdownPulse();
-                return;
+                countdownNumber.style.animation = 'none';
+                void countdownNumber.offsetWidth; // trigger reflow
+                countdownNumber.style.animation = 'titlePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both';
+            } else {
+                clearInterval(countInterval);
+                playRoleReveal();
             }
+        }, 1000);
+    }
 
-            clearInterval(cinematicStepInterval);
-            cinematicStepInterval = null;
-            hideCinematicStep(cinematicCountdown);
+    function playRoleReveal() {
+        cinematicCountdown.style.display = 'none';
+        cinematicRole.style.display = 'flex';
+        
+        // Let it show for 3 seconds
+        setTimeout(() => {
+            playWordReveal();
+        }, 3000);
+    }
 
-            trackTimeout(cinematicTimeouts, () => {
-                showCinematicStep(cinematicRole);
-                trackTimeout(cinematicTimeouts, () => {
-                    hideCinematicStep(cinematicRole);
-                    trackTimeout(cinematicTimeouts, () => {
-                        showCinematicStep(cinematicWord);
-                    }, 500);
-                }, CINEMATIC_ROLE_REVEAL_MS);
-            }, 500);
-        }, CINEMATIC_COUNTDOWN_STEP_MS);
+    function playWordReveal() {
+        cinematicRole.style.display = 'none';
+        cinematicWord.style.display = 'flex';
+        
+        // After 3 seconds, the backend will send game:turnStart which handles fading out 
+        // the cinematic overlay and fading in the drawing phase.
     }
 
     // ══════════════════════════════════════════════
@@ -344,9 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     showPhase('starting');
                 }
             } else if (room.phase === 'drawing') {
-                if (cinematicOverlay.style.display !== 'none') {
-                    return;
-                }
                 // We joined mid-game, show drawing phase directly
                 if (!cinematicPlayed) {
                     cinematicPlayed = true; // skip cinematic
@@ -419,38 +335,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // ── Turn System ──
         socket.on('game:turnStart', (data) => {
+            showPhase('drawing');
             const { activePlayerId, activePlayerName, duration } = data;
-            const applyTurnState = () => {
-                showPhase('drawing');
-                drawerTextEl.innerHTML = `<strong>${activePlayerName}</strong> is Drawing`;
 
-                if (activePlayerId === socket.id) {
-                    canvas.classList.remove('disabled');
-                } else {
-                    canvas.classList.add('disabled');
-                }
+            drawerTextEl.innerHTML = `<strong>${activePlayerName}</strong> is Drawing`;
 
-                startTimer(turnTimerEl, duration);
-
-                document.querySelectorAll('.player-card').forEach(el => {
-                    el.classList.toggle('active-drawer', el.dataset.id === activePlayerId);
-                });
-            };
-
-            clearCinematicSequence();
-            if (cinematicOverlay.style.display !== 'none') {
-                fadeOutOverlay(cinematicOverlay, DRAWING_ENTRY_FADE_MS).then(applyTurnState);
+            // Enable canvas only for active drawer
+            if (activePlayerId === socket.id) {
+                canvas.classList.remove('disabled');
             } else {
-                applyTurnState();
+                canvas.classList.add('disabled');
             }
+
+            // Countdown
+            startTimer(turnTimerEl, duration);
+
+            // Highlight in player list
+            document.querySelectorAll('.player-card').forEach(el => {
+                el.classList.toggle('active-drawer', el.dataset.id === activePlayerId);
+            });
         });
 
         socket.on('game:turnEnd', () => {
             canvas.classList.add('disabled');
             clearTimer();
             turnTimerEl.textContent = '--s';
-            turnTimerEl.style.setProperty('--time-progress', '0%');
-            turnTimerEl.style.setProperty('--hand-rotation', '360deg');
         });
 
         // ── Drawing ──
@@ -464,7 +373,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // ── Voting ──
         socket.on('game:voteStart', (data) => {
-            clearTrackedTimeouts(voteResultTimeouts);
             showPhase('voting');
             resetVotingUI();
             buildVoteCards();
@@ -473,16 +381,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         socket.on('game:voteResult', (data) => {
             // Investigation mode: show intermediate result
-            clearTrackedTimeouts(voteResultTimeouts);
-            fadeOutOverlay(votingOverlay, OVERLAY_FADE_MS).then(() => {
-                showVoteResult(data);
-            });
+            showVoteResult(data);
         });
 
         // ── Game End ──
         socket.on('game:end', (data) => {
-            clearTrackedTimeouts(voteResultTimeouts);
-            clearCinematicSequence();
             showWinnerScreen(data);
         });
 
@@ -503,33 +406,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // ══════════════════════════════════════════════
     // TIMER
     // ══════════════════════════════════════════════
-    function updateTimerVisual(el, timeLeft, duration, isVote = false) {
-        const safeDuration = Math.max(1, duration || 1);
-        const progress = `${Math.max(0, (timeLeft / safeDuration) * 100)}%`;
-        const rotation = `${((safeDuration - timeLeft) / safeDuration) * 360}deg`;
-
-        el.textContent = `${timeLeft}s`;
-        el.style.setProperty('--time-progress', progress);
-        el.style.setProperty('--hand-rotation', rotation);
-        el.classList.toggle('urgent', isVote && timeLeft <= 5);
-    }
-
     function startTimer(el, duration, isVote = false) {
         clearTimer();
         let timeLeft = duration;
-
+        el.textContent = `${timeLeft}s`;
         el.classList.remove('urgent');
-        updateTimerVisual(el, timeLeft, duration, isVote);
 
         activeTimerInterval = setInterval(() => {
             timeLeft--;
             if (timeLeft < 0) timeLeft = 0;
+            el.textContent = `${timeLeft}s`;
 
-            updateTimerVisual(el, timeLeft, duration, isVote);
-
-            if (timeLeft === 0) {
-                clearTimer();
+            if (isVote && timeLeft <= 5) {
+                el.classList.add('urgent');
             }
+
+            if (timeLeft === 0) clearTimer();
         }, 1000);
     }
 
@@ -750,9 +642,6 @@ document.addEventListener('DOMContentLoaded', () => {
         voteConfirmBtn.disabled = true;
         voteSubtitleEl.textContent = 'Who do you think is faking it?';
         voteProgressEl.textContent = '';
-        voteTimerEl.classList.remove('urgent');
-        voteTimerEl.style.setProperty('--time-progress', '100%');
-        voteTimerEl.style.setProperty('--hand-rotation', '0deg');
     }
 
     function buildVoteCards() {
@@ -842,9 +731,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        trackTimeout(voteResultTimeouts, () => {
-            fadeOutOverlay(voteResultOverlay, VOTE_RESULT_EXIT_MS);
-        }, VOTE_RESULT_HOLD_MS);
+        // Auto-transition back to drawing after 5 seconds
+        setTimeout(() => {
+            // If the game hasn't ended, go back to drawing
+            if (currentRoom && currentRoom.phase !== 'end') {
+                showPhase('drawing');
+            }
+        }, 5000);
     }
 
     // ══════════════════════════════════════════════
@@ -900,23 +793,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupWinnerActions() {
         playAgainBtn.addEventListener('click', () => {
-            socket.emit('game:returnToLobby', { roomCode });
+            if (!isHost) return;
+            socket.emit('game:restart', { roomCode });
             playAgainBtn.classList.add('waiting-state');
-            playAgainBtn.textContent = 'Returning...';
+            playAgainBtn.textContent = 'Starting…';
         });
 
         backToLobbyBtn.addEventListener('click', () => {
-            socket.emit('room:leave', { roomCode });
-            clearStoredSession(roomCode);
-            window.location.href = '/';
+            if (isHost) {
+                socket.emit('game:returnToLobby', { roomCode });
+            } else {
+                // Non-host just navigates back
+                window.location.href = `/pregame-lobby/pregame-lobby.html?room=${roomCode}`;
+            }
         });
     }
 
     function setupWinnerButtons() {
-        playAgainBtn.classList.remove('host-only-hidden', 'waiting-state');
-        playAgainBtn.textContent = 'Play Again';
-        backToLobbyBtn.classList.remove('host-only-hidden');
-        backToLobbyBtn.textContent = 'Leave Party';
+        if (isHost) {
+            playAgainBtn.classList.remove('host-only-hidden', 'waiting-state');
+            playAgainBtn.textContent = 'Play Again';
+            backToLobbyBtn.classList.remove('host-only-hidden');
+            backToLobbyBtn.textContent = 'Back to Lobby';
+        } else {
+            playAgainBtn.classList.add('host-only-hidden');
+            backToLobbyBtn.classList.remove('host-only-hidden');
+            backToLobbyBtn.textContent = 'Leave to Lobby';
+        }
     }
 
     function normalizeRoomCode(code) {

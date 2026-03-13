@@ -57,18 +57,6 @@ function addPlayer(roomCode, player) {
     const room = getRoom(roomCode);
     if (!room) return { error: 'ROOM_NOT_FOUND' };
 
-    if (room.players.length >= room.settings.maxPlayers) {
-        return { error: 'ROOM_FULL' };
-    }
-
-    if (room.phase !== PHASE.LOBBY) {
-        // Allow reconnecting players during game, but not new joins
-        const existing = room.players.find(p => p.sessionToken === player.sessionToken);
-        if (!existing) {
-            return { error: 'ROOM_IN_GAME' };
-        }
-    }
-
     // Check if player already exists (by sessionToken for reconnect, or socketId)
     const existIdx = room.players.findIndex(
         p => p.sessionToken === player.sessionToken || p.id === player.id
@@ -77,6 +65,7 @@ function addPlayer(roomCode, player) {
     if (existIdx !== -1) {
         // Reconnecting — update socket id while preserving game data
         const old = room.players[existIdx];
+        const oldSocketId = old.id;
         room.players[existIdx] = {
             ...old,
             id: player.id,               // new socket id
@@ -85,9 +74,21 @@ function addPlayer(roomCode, player) {
             name: player.name || old.name,
             avatar: player.avatar || old.avatar,
         };
-    } else {
-        room.players.push(player);
+
+        room.lastActivity = Date.now();
+        socketToRoom.set(player.id, roomCode);
+        return { room, oldSocketId };
     }
+
+    if (room.players.length >= room.settings.maxPlayers) {
+        return { error: 'ROOM_FULL' };
+    }
+
+    if (room.phase !== PHASE.LOBBY) {
+        return { error: 'ROOM_IN_GAME' };
+    }
+
+    room.players.push(player);
 
     room.lastActivity = Date.now();
     socketToRoom.set(player.id, roomCode);
@@ -151,7 +152,10 @@ function markDisconnected(roomCode, socketId) {
     socketToRoom.delete(socketId);
 
     // Host migration if host disconnects
-    if (room.hostId === socketId) {
+    // CRITICAL: Do NOT migrate host if we are in the middle of starting a game or playing
+    // to prevent host role bouncing during page transitions
+    const skipMigrationPhases = [PHASE.STARTING, PHASE.PROMPT, PHASE.DRAWING];
+    if (room.hostId === socketId && !skipMigrationPhases.includes(room.phase)) {
         const nextHost = room.players.find(p => p.isConnected && p.id !== socketId);
         if (nextHost) {
             room.hostId = nextHost.id;
@@ -208,6 +212,14 @@ function addChatMessage(roomCode, msgObj) {
     return room;
 }
 
+function clearChatHistory(roomCode) {
+    const room = getRoom(roomCode);
+    if (!room) return null;
+
+    room.chat = [];
+    return room;
+}
+
 // ────────────────────────────────────────────────────────
 // State Broadcasting Helpers
 // ────────────────────────────────────────────────────────
@@ -238,6 +250,7 @@ function getPublicRoomState(room) {
         totalRounds: room.gameState.totalRounds,
         wrongVotes: room.gameState.wrongVotes,
         inkLeft: room.gameState.inkLeft,
+        eliminatedPlayers: room.gameState.eliminatedPlayers || [],
         // Do NOT include: roles, prompt, votes (unless anonymous is off and phase allows)
     } : null;
 
@@ -296,6 +309,7 @@ module.exports = {
     markDisconnected,
     updateSettings,
     addChatMessage,
+    clearChatHistory,
     getPublicRoomState,
     getHostState,
     getRoomForSocket,

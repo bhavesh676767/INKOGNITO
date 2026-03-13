@@ -8,6 +8,7 @@ const C2S = {
     ROOM_CREATE:        'room:create',
     ROOM_JOIN:          'room:join',
     ROOM_LEAVE:         'room:leave',
+    ROOM_KICK_PLAYER:   'room:kickPlayer',
     ROOM_RECONNECT:     'room:reconnect',
     ROOM_REQUEST_STATE: 'room:requestState',
 
@@ -22,6 +23,7 @@ const C2S = {
     GAME_START:         'game:start',
     GAME_RESTART:       'game:restart',
     GAME_RETURN_LOBBY:  'game:returnToLobby',
+    ROUND_CONTINUE_VOTE:'round:continueVote',
 
     DRAW_STROKE:        'draw:stroke',
     VOTE_SUBMIT:        'vote:submit',
@@ -53,6 +55,8 @@ const S2C = {
     GAME_TURN_END:      'game:turnEnd',
     GAME_OUT_OF_INK:    'game:outOfInk',
     GAME_VOTE_START:    'game:voteStart',
+    GAME_ROUND_DECISION_START: 'game:roundDecisionStart',
+    GAME_ROUND_DECISION_RESULT:'game:roundDecisionResult',
     GAME_VOTE_RESULT:   'game:voteResult',
     GAME_END:           'game:end',
 
@@ -67,6 +71,7 @@ const PHASE = {
     STARTING:    'starting',
     PROMPT:      'prompt',
     DRAWING:     'drawing',
+    ROUND_DECISION: 'roundDecision',
     VOTING:      'voting',
     VOTE_RESULT: 'voteResult',
     END:         'end',
@@ -83,8 +88,9 @@ const ERR = {
     INVALID_SETTINGS:   'INVALID_SETTINGS',
     INVALID_PHASE:      'INVALID_PHASE',
     INVALID_INPUT:      'INVALID_INPUT',
-    RATE_LIMITED:        'RATE_LIMITED',
+    RATE_LIMITED:       'RATE_LIMITED',
     ALREADY_IN_ROOM:    'ALREADY_IN_ROOM',
+    KICKED:             'KICKED',
 };
 
 module.exports = { C2S, S2C, PHASE, ERR };

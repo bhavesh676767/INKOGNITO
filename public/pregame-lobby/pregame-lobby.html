@@ -128,10 +128,10 @@
                             </svg>
                             <label for="turnDuration">Turn Duration</label>
                             <select id="turnDuration" class="white-select" disabled>
-                                <option value="5">5 Secs</option>
-                                <option value="10">10 Secs</option>
-                                <option value="15">15 Secs</option>
+                                <option value="20" selected>20 Secs</option>
                                 <option value="30">30 Secs</option>
+                                <option value="45">45 Secs</option>
+                                <option value="60">60 Secs</option>
                             </select>
                         </div>
 
@@ -363,11 +363,7 @@
                     CHAT
                 </div>
 
-                <div class="chat-messages" id="chatMessages" role="log" aria-live="polite">
-                    <div class="chat-msg system">
-                        <span class="msg-sender">SYSTEM</span>Lobby created. Invite your friends!
-                    </div>
-                </div>
+                <div class="chat-messages" id="chatMessages" role="log" aria-live="polite"></div>
 
                 <div class="chat-input-area">
                     <form id="chatForm" autocomplete="off">
@@ -465,26 +461,6 @@
             navigator.clipboard.writeText(window.location.href).catch(() => { });
             showToast('Invite link copied!');
         });
-    </script>
-
-    <!-- Chat -->
-    <script>
-        const chatForm = document.getElementById('chatForm');
-        const chatInput = document.getElementById('chatInput');
-        const chatMessages = document.getElementById('chatMessages');
-        chatForm.addEventListener('submit', e => {
-            e.preventDefault();
-            const text = chatInput.value.trim(); if (!text) return;
-            appendMsg('You', text, false);
-            chatInput.value = '';
-        });
-        function appendMsg(sender, text, isSystem) {
-            const div = document.createElement('div');
-            div.className = 'chat-msg' + (isSystem ? ' system' : '');
-            div.innerHTML = '<span class="msg-sender">' + sender + '</span>' + text;
-            chatMessages.appendChild(div);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
     </script>
 
     <!-- Mic mute toggle -->

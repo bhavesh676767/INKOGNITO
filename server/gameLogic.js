@@ -140,7 +140,7 @@ function startGame(roomCode, io) {
     // 3s countdown + 3s role reveal + 3s word reveal = 9s total
     setGameTimer(roomCode, () => {
         startTurn(roomCode, io);
-    }, 9000);
+    }, 12000);
 
     return { success: true };
 }
@@ -164,7 +164,7 @@ function startTurn(roomCode, io) {
         return;
     }
 
-    const duration = room.settings.turnDuration || 5;
+    const duration = room.settings.turnDuration || 20;
 
     // Broadcast turn start
     io.to(roomCode).emit(S2C.GAME_TURN_START, {
@@ -234,7 +234,7 @@ function startVoting(roomCode, io) {
     }, voteTime * 1000);
 }
 
-function submitVote(roomCode, voterId, suspectId) {
+function submitVote(roomCode, voterId, suspectId, io) {
     const room = getRoom(roomCode);
     if (!room || room.phase !== PHASE.VOTING || !room.gameState) return false;
 
@@ -250,6 +250,13 @@ function submitVote(roomCode, voterId, suspectId) {
     if (voterId === suspectId) return false;
 
     room.gameState.votes[voterId] = suspectId;
+
+    const connectedPlayers = room.players.filter(p => p.isConnected).length;
+    const submittedVotes = Object.keys(room.gameState.votes).length;
+    if (io && submittedVotes >= connectedPlayers) {
+        endVoting(roomCode, io);
+    }
+
     return true;
 }
 
@@ -303,7 +310,7 @@ function endVoting(roomCode, io) {
                     });
                     setGameTimer(roomCode, () => {
                         startTurn(roomCode, io);
-                    }, 5000);
+                    }, 7000);
                 }
             }
         }

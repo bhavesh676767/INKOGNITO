@@ -10,19 +10,33 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Black+Han+Sans&display=swap"
         rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-qTLgeVO5.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-Cd4hj94A.css">
+  <script type="module" crossorigin src="/assets/index-4JM1fKab.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BCtPSEEb.css">
 </head>
 
 <canvas id="starCanvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 
 <script>
 (function () {
+  const prefersReduced =
+    window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   const canvas = document.getElementById('starCanvas');
+  if (!canvas || prefersReduced) {
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+    return;
+  }
+
   const ctx = canvas.getContext('2d');
 
   function resize() {
-    canvas.width  = window.innerWidth;
+    canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
   }
 
@@ -40,9 +54,10 @@
         alpha: Math.random() * 0.7 + 0.3,
         twinkleSpeed: Math.random() * 0.02 + 0.005,
         twinkleOffset: Math.random() * Math.PI * 2,
-        color: Math.random() < 0.15
-          ? `hsl(${200 + Math.random() * 60},80%,92%)`
-          : Math.random() < 0.07
+        color:
+          Math.random() < 0.15
+            ? `hsl(${200 + Math.random() * 60},80%,92%)`
+            : Math.random() < 0.07
             ? `hsl(${30 + Math.random() * 30},90%,92%)`
             : '#ffffff',
         giant: Math.random() < 0.04
@@ -68,16 +83,17 @@
     t += 0.012;
 
     for (const s of stars) {
-      const tw = 0.5 + 0.5 * Math.sin(t * s.twinkleSpeed * 50 + s.twinkleOffset);
-      const a  = s.alpha * (0.5 + 0.5 * tw);
+      const tw =
+        0.5 + 0.5 * Math.sin(t * s.twinkleSpeed * 50 + s.twinkleOffset);
+      const a = s.alpha * (0.5 + 0.5 * tw);
       ctx.save();
       ctx.globalAlpha = a;
-      ctx.fillStyle   = s.color;
+      ctx.fillStyle = s.color;
       if (s.giant) {
         ctx.translate(s.x, s.y);
         for (let k = 0; k < 4; k++) {
           ctx.save();
-          ctx.rotate(k * Math.PI / 4);
+          ctx.rotate((k * Math.PI) / 4);
           ctx.fillRect(-0.7, -s.r * 2.6, 1.4, s.r * 5.2);
           ctx.restore();
         }
@@ -92,17 +108,20 @@
     for (let i = shootingStars.length - 1; i >= 0; i--) {
       const ss = shootingStars[i];
       ss.life -= 0.022;
-      if (ss.life <= 0) { shootingStars.splice(i, 1); continue; }
+      if (ss.life <= 0) {
+        shootingStars.splice(i, 1);
+        continue;
+      }
       ss.x += Math.cos(ss.angle) * ss.speed;
       ss.y += Math.sin(ss.angle) * ss.speed;
       const tx = ss.x - Math.cos(ss.angle) * ss.len;
       const ty = ss.y - Math.sin(ss.angle) * ss.len;
-      const g  = ctx.createLinearGradient(tx, ty, ss.x, ss.y);
+      const g = ctx.createLinearGradient(tx, ty, ss.x, ss.y);
       g.addColorStop(0, 'rgba(255,255,255,0)');
       g.addColorStop(1, `rgba(255,255,255,${ss.life * 0.9})`);
       ctx.save();
       ctx.strokeStyle = g;
-      ctx.lineWidth   = 1.5;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(tx, ty);
       ctx.lineTo(ss.x, ss.y);
@@ -113,7 +132,10 @@
     requestAnimationFrame(draw);
   }
 
-  window.addEventListener('resize', () => { resize(); initStars(); });
+  window.addEventListener('resize', () => {
+    resize();
+    initStars();
+  });
   resize();
   initStars();
   draw();

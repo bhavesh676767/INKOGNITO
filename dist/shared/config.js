@@ -18,9 +18,9 @@
         // Game settings
         game: {
             // Minimum players required to start
-            minPlayers: 2,
+            minPlayers: 4,
             // Maximum players allowed
-            maxPlayers: 8,
+            maxPlayers: 10,
             // Room code length
             roomCodeLength: 4
         },

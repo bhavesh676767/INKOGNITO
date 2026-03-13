@@ -8,7 +8,7 @@ const VALID_LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'PT', 'TR'];
 
 const LIMITS = {
     maxPlayers:         { min: 4, max: 10, default: 6 },
-    turnDuration:       { min: 3, max: 60, default: 5 },
+    turnDuration:       { min: 20, max: 60, default: 20 },
     brushSize:          { min: 1, max: 10, default: 3 },
     inkLimit:           { min: 10, max: 200, default: 50 },
     voteTime:           { min: 10, max: 120, default: 30 },
@@ -31,6 +31,8 @@ function getDefaultSettings() {
         numberOfImposters: LIMITS.numberOfImposters.default,
         allowVoiceChat: false,
         anonymousVote: false,
+        spectatorMode: false,
+        cleanChatOnStart: true,
         customWordsEnabled: false,
         customWords: [],
     };
@@ -78,11 +80,15 @@ function validateSettings(existing, incoming) {
     }
 
     // Boolean toggles
-    const boolFields = ['slowMoReplay', 'allowVoiceChat', 'anonymousVote', 'customWordsEnabled'];
+    const boolFields = ['slowMoReplay', 'allowVoiceChat', 'anonymousVote', 'spectatorMode', 'cleanChatOnStart', 'customWordsEnabled'];
     for (const key of boolFields) {
         if (key in incoming) {
             merged[key] = !!incoming[key];
         }
+    }
+
+    if ('mode' in incoming && !('spectatorMode' in incoming)) {
+        merged.spectatorMode = incoming.mode === 'Investigation';
     }
 
     // Custom words — only allow array of strings, max 20 words, max 30 chars each
